@@ -1,19 +1,14 @@
 package com.example.network.dto;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor
 public class AuthResponse {
-    private String token;
-    private String type = "Bearer";
-    private String username;
-    private String role;
 
-    public AuthResponse(String token, String username, String role) {
-        this.token = token;
-        this.username = username;
-        this.role = role;
-    }
-
-    public String getToken() { return token; }
-    public String getType() { return type; }
-    public String getUsername() { return username; }
-    public String getRole() { return role; }
+    private final String token;
+    private final String username;
+    private final String role;
+    private final String type = "Bearer";
 }

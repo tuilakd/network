@@ -1,8 +1,11 @@
 package com.example.network.dto;
 
 import com.example.network.entity.ChatMessage;
+import lombok.Getter;
+
 import java.time.LocalDateTime;
 
+@Getter
 public class ChatMessageResponse {
 
     private Long id;
@@ -20,10 +23,4 @@ public class ChatMessageResponse {
         r.sentAt = m.getSentAt();
         return r;
     }
-
-    public Long getId() { return id; }
-    public Long getRoomId() { return roomId; }
-    public String getSender() { return sender; }
-    public String getContent() { return content; }
-    public LocalDateTime getSentAt() { return sentAt; }
 }

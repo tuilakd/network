@@ -2,7 +2,11 @@ package com.example.network.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class DataRequest {
 
     @NotBlank
@@ -11,9 +15,4 @@ public class DataRequest {
 
     @Size(max = 2000)
     private String content;
-
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
-    public String getContent() { return content; }
-    public void setContent(String content) { this.content = content; }
 }
