@@ -1,6 +1,6 @@
 package com.example.network.service;
 
-import com.example.network.dto.DataRequest;
+import com.example.network.entity.request.DataRequest;
 import com.example.network.entity.DataItem;
 
 import java.util.List;

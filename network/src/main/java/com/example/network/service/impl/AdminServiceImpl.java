@@ -1,6 +1,6 @@
 package com.example.network.service.impl;
 
-import com.example.network.dto.UserSummary;
+import com.example.network.entity.response.UserSummary;
 import com.example.network.entity.User;
 import com.example.network.exception.ResourceNotFoundException;
 import com.example.network.repository.RoomMemberRepository;

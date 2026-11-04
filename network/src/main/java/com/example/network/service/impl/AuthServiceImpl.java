@@ -1,9 +1,9 @@
 package com.example.network.service.impl;
 
-import com.example.network.dto.AuthResponse;
-import com.example.network.dto.LoginRequest;
-import com.example.network.dto.RegisterRequest;
-import com.example.network.dto.UserResponse;
+import com.example.network.entity.response.AuthResponse;
+import com.example.network.entity.request.LoginRequest;
+import com.example.network.entity.request.RegisterRequest;
+import com.example.network.entity.response.UserResponse;
 import com.example.network.entity.User;
 import com.example.network.repository.UserRepository;
 import com.example.network.security.JwtUtil;

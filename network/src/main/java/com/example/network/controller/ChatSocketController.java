@@ -1,6 +1,6 @@
 package com.example.network.controller;
 
-import com.example.network.dto.ChatMessageRequest;
+import com.example.network.entity.request.ChatMessageRequest;
 import com.example.network.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.DestinationVariable;

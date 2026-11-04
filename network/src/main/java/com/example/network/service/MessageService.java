@@ -1,6 +1,6 @@
 package com.example.network.service;
 
-import com.example.network.dto.ChatMessageResponse;
+import com.example.network.entity.response.ChatMessageResponse;
 
 import java.util.List;
 

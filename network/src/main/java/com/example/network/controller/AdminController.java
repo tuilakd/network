@@ -1,6 +1,6 @@
 package com.example.network.controller;
 
-import com.example.network.dto.UserSummary;
+import com.example.network.entity.response.UserSummary;
 import com.example.network.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;

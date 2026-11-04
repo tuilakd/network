@@ -1,6 +1,6 @@
 package com.example.network.controller;
 
-import com.example.network.dto.DataRequest;
+import com.example.network.entity.request.DataRequest;
 import com.example.network.entity.DataItem;
 import com.example.network.service.DataService;
 import jakarta.validation.Valid;

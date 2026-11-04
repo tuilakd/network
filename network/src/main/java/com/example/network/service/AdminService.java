@@ -1,6 +1,6 @@
 package com.example.network.service;
 
-import com.example.network.dto.UserSummary;
+import com.example.network.entity.response.UserSummary;
 
 import java.util.List;
 

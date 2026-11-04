@@ -1,9 +1,9 @@
 package com.example.network.controller;
 
-import com.example.network.dto.AuthResponse;
-import com.example.network.dto.LoginRequest;
-import com.example.network.dto.RegisterRequest;
-import com.example.network.dto.UserResponse;
+import com.example.network.entity.response.AuthResponse;
+import com.example.network.entity.request.LoginRequest;
+import com.example.network.entity.request.RegisterRequest;
+import com.example.network.entity.response.UserResponse;
 import com.example.network.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

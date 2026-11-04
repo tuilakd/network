@@ -1,6 +1,6 @@
 package com.example.network.service.impl;
 
-import com.example.network.dto.DataRequest;
+import com.example.network.entity.request.DataRequest;
 import com.example.network.entity.DataItem;
 import com.example.network.exception.ResourceNotFoundException;
 import com.example.network.repository.DataRepository;

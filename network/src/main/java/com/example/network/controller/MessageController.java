@@ -1,7 +1,7 @@
 package com.example.network.controller;
 
-import com.example.network.dto.ChatMessageRequest;
-import com.example.network.dto.ChatMessageResponse;
+import com.example.network.entity.request.ChatMessageRequest;
+import com.example.network.entity.response.ChatMessageResponse;
 import com.example.network.service.MessageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

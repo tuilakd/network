@@ -1,6 +1,6 @@
 package com.example.network.service.impl;
 
-import com.example.network.dto.ChatMessageResponse;
+import com.example.network.entity.response.ChatMessageResponse;
 import com.example.network.entity.ChatMessage;
 import com.example.network.repository.ChatMessageRepository;
 import com.example.network.service.MessageService;

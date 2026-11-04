@@ -1,6 +1,6 @@
 package com.example.network.controller;
 
-import com.example.network.dto.RoomRequest;
+import com.example.network.entity.request.RoomRequest;
 import com.example.network.entity.ChatRoom;
 import com.example.network.service.RoomService;
 import jakarta.validation.Valid;
