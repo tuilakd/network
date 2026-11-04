@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chat nhóm</title>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; margin: 0; background: #f0f2f5; }
+        .hidden { display: none !important; }
+        #login { max-width: 320px; margin: 80px auto; background: #fff; padding: 24px; border-radius: 8px; }
+        #login input { width: 100%; padding: 8px; margin: 6px 0; }
+        button { padding: 8px 12px; cursor: pointer; }
+        #app { display: flex; height: 100vh; }
+        #sidebar { width: 260px; background: #fff; border-right: 1px solid #ddd; padding: 12px; overflow-y: auto; }
+        #main { flex: 1; display: flex; flex-direction: column; }
+        #header { padding: 12px; background: #fff; border-bottom: 1px solid #ddd; font-weight: bold; }
+        #messages { flex: 1; overflow-y: auto; padding: 12px; }
+        .msg { margin: 6px 0; padding: 8px 10px; background: #fff; border-radius: 8px; max-width: 70%; word-wrap: break-word; }
+        .msg.me { background: #d9fdd3; margin-left: auto; }
+        .msg .who { font-size: 12px; color: #667; font-weight: bold; }
+        .msg .time { font-size: 11px; color: #999; margin-left: 6px; }
+        #form { display: flex; gap: 8px; padding: 12px; background: #fff; border-top: 1px solid #ddd; }
+        #text { flex: 1; padding: 8px; }
+        .room { padding: 8px; border-radius: 6px; margin: 4px 0; cursor: pointer; background: #f6f6f6; }
+        .room.active { background: #cfe3ff; }
+        .room small { color: #777; }
+        #status { font-size: 12px; color: #888; padding: 0 12px 6px; background: #fff; }
+        #err { color: #c00; font-size: 13px; padding: 4px 12px; }
+    </style>
+</head>
+<body>
+
+<div id="login">
+    <h3>Đăng nhập</h3>
+    <input id="u" placeholder="Tên đăng nhập">
+    <input id="p" type="password" placeholder="Mật khẩu">
+    <button id="btnLogin">Đăng nhập</button>
+    <button id="btnRegister">Đăng ký</button>
+    <div id="loginMsg" style="color:#c00;margin-top:8px"></div>
+</div>
+
+<div id="app" class="hidden">
+    <div id="sidebar">
+        <div>Xin chào, <b id="me"></b> <button id="btnLogout">Thoát</button></div>
+        <hr>
+        <input id="newRoom" placeholder="Tên phòng mới">
+        <button id="btnCreate">Tạo</button>
+        <h4>Tất cả phòng</h4>
+        <div id="rooms"></div>
+    </div>
+    <div id="main">
+        <div id="header">Chọn một phòng để chat</div>
+        <div id="status">Chưa kết nối</div>
+        <div id="messages"></div>
+        <div id="err"></div>
+        <form id="form">
+            <input id="text" placeholder="Nhập tin nhắn..." autocomplete="off">
+            <button>Gửi</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    let token = null, username = null, role = null;
+    let client = null, currentRoom = null, roomSub = null;
+    let myRooms = new Set();
+    const seen = new Set();
+
+    const $ = id => document.getElementById(id);
+
+    async function api(path, method = 'GET', body) {
+        const res = await fetch(path, {
+            method,
+            headers: Object.assign(
+                { 'Content-Type': 'application/json' },
+                token ? { 'Authorization': 'Bearer ' + token } : {}),
+            body: body ? JSON.stringify(body) : undefined
+        });
+        let data = null;
+        try { data = await res.json(); } catch (e) {}
+        if (!res.ok) throw new Error((data && (data.error || data.message)) || ('Lỗi ' + res.status));
+        return data;
+    }
+
+    /* ---------- Đăng nhập / đăng ký ---------- */
+    $('btnRegister').onclick = async () => {
+        try {
+            await api('/api/auth/register', 'POST', { username: $('u').value, password: $('p').value });
+            $('loginMsg').style.color = 'green';
+            $('loginMsg').textContent = 'Đăng ký thành công, hãy đăng nhập.';
+        } catch (e) { $('loginMsg').style.color = '#c00'; $('loginMsg').textContent = e.message; }
+    };
+
+    $('btnLogin').onclick = async () => {
+        try {
+            const r = await api('/api/auth/login', 'POST', { username: $('u').value, password: $('p').value });
+            token = r.token; username = r.username; role = r.role;
+            try { sessionStorage.setItem('chat', JSON.stringify({ token, username, role })); } catch (e) {}
+            startApp();
+        } catch (e) { $('loginMsg').style.color = '#c00'; $('loginMsg').textContent = e.message; }
+    };
+
+    $('btnLogout').onclick = () => {
+        try { sessionStorage.removeItem('chat'); } catch (e) {}
+        if (client) client.deactivate();
+        location.reload();
+    };
+
+    /* ---------- Khởi động ---------- */
+    async function startApp() {
+        $('login').classList.add('hidden');
+        $('app').classList.remove('hidden');
+        $('me').textContent = username;
+        await loadRooms();
+        connect();
+    }
+
+    async function loadRooms() {
+        try {
+            const mine = await api('/api/rooms/mine');
+            myRooms = new Set(mine.map(r => r.id));
+            const all = await api('/api/rooms');
+            const box = $('rooms');
+            box.innerHTML = '';
+            all.forEach(r => {
+                const div = document.createElement('div');
+                div.className = 'room' + (r.id === currentRoom ? ' active' : '');
+                const joined = myRooms.has(r.id);
+                div.textContent = r.name + ' ';
+                const small = document.createElement('small');
+                small.textContent = joined ? '(đã tham gia)' : '(chưa tham gia)';
+                div.appendChild(small);
+
+                if (!joined) {
+                    const btn = document.createElement('button');
+                    btn.textContent = 'Tham gia';
+                    btn.style.marginLeft = '6px';
+                    btn.onclick = async ev => {
+                        ev.stopPropagation();
+                        try {
+                            await api('/api/rooms/' + r.id + '/join', 'POST');
+                            await loadRooms();
+                        } catch (e) { showErr(e.message); }
+                    };
+                    div.appendChild(btn);
+                }
+
+                div.onclick = () => openRoom(r, joined);
+                box.appendChild(div);
+            });
+        } catch (e) { showErr(e.message); }
+    }
+    $('btnCreate').onclick = async () => {
+        const name = $('newRoom').value.trim();
+        if (!name) return;
+        try { await api('/api/rooms', 'POST', { name }); $('newRoom').value = ''; await loadRooms(); }
+        catch (e) { showErr(e.message); }
+    };
+
+    /* ---------- WebSocket (STOMP) ---------- */
+    function connect() {
+        const scheme = location.protocol === 'https:' ? 'wss://' : 'ws://';
+        client = new StompJs.Client({
+            brokerURL: scheme + location.host + '/ws',
+            connectHeaders: { Authorization: 'Bearer ' + token },
+            reconnectDelay: 5000,
+            onConnect: () => {
+                $('status').textContent = 'Đã kết nối (thời gian thực)';
+                client.subscribe('/user/queue/errors', f => showErr(f.body));
+                if (currentRoom) subscribeRoom(currentRoom);
+            },
+            onWebSocketClose: () => { $('status').textContent = 'Mất kết nối, đang thử lại...'; },
+            onStompError: f => showErr(f.headers['message'] || 'Lỗi STOMP')
+        });
+        client.activate();
+    }
+
+    function subscribeRoom(roomId) {
+        if (roomSub) { roomSub.unsubscribe(); roomSub = null; }
+        if (!client || !client.connected) return;
+        roomSub = client.subscribe('/topic/room.' + roomId, f => addMessage(JSON.parse(f.body)));
+    }
+
+    /* ---------- Phòng và tin nhắn ---------- */
+    async function openRoom(room, joined) {
+        try {
+            if (!joined) { showErr('Bạn chưa tham gia phòng này. Hãy bấm nút "Tham gia".'); return; }
+            currentRoom = room.id;
+            $('header').textContent = room.name;
+            $('messages').innerHTML = '';
+            seen.clear();
+            showErr('');
+            subscribeRoom(room.id);
+            const history = await api('/api/rooms/' + room.id + '/messages?size=50');
+            history.forEach(addMessage);
+            await loadRooms();
+        } catch (e) { showErr(e.message); }
+    }
+
+    function addMessage(m) {
+        if (m.roomId !== currentRoom || seen.has(m.id)) return;
+        seen.add(m.id);
+        const div = document.createElement('div');
+        div.className = 'msg' + (m.sender === username ? ' me' : '');
+        const who = document.createElement('div');
+        who.className = 'who';
+        who.textContent = m.sender;
+        const time = document.createElement('span');
+        time.className = 'time';
+        time.textContent = new Date(m.sentAt).toLocaleTimeString('vi-VN');
+        who.appendChild(time);
+        const body = document.createElement('div');
+        body.textContent = m.content;          // textContent để tránh chèn HTML độc hại
+        div.appendChild(who);
+        div.appendChild(body);
+        const box = $('messages');
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    $('form').onsubmit = e => {
+        e.preventDefault();
+        const text = $('text').value.trim();
+        if (!text || !currentRoom) return;
+        if (!client || !client.connected) { showErr('Chưa kết nối'); return; }
+        client.publish({
+            destination: '/app/chat.send/' + currentRoom,
+            body: JSON.stringify({ content: text })
+        });
+        $('text').value = '';
+    };
+
+    function showErr(msg) { $('err').textContent = msg || ''; }
+
+    /* ---------- Khôi phục đăng nhập khi tải lại trang ---------- */
+    try {
+        const saved = JSON.parse(sessionStorage.getItem('chat') || 'null');
+        if (saved) { token = saved.token; username = saved.username; role = saved.role; startApp(); }
+    } catch (e) {}
+</script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quản trị</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f0f2f5; }
+        .hidden { display: none !important; }
+        .box { max-width: 900px; margin: 30px auto; background: #fff; padding: 20px; border-radius: 8px; }
+        input, select { padding: 8px; margin: 4px 0; }
+        button { padding: 6px 10px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
+        th { background: #f6f6f6; }
+        .tabs button { margin-right: 6px; }
+        #msg { color: #c00; margin-top: 8px; }
+    </style>
+</head>
+<body>
+
+<div id="login" class="box" style="max-width:320px">
+    <h3>Đăng nhập quản trị</h3>
+    <input id="u" placeholder="Tên đăng nhập"><br>
+    <input id="p" type="password" placeholder="Mật khẩu"><br>
+    <button id="btnLogin">Đăng nhập</button>
+    <div id="loginMsg" style="color:#c00;margin-top:8px"></div>
+</div>
+
+<div id="panel" class="box hidden">
+    <div>Quản trị viên: <b id="me"></b> <button id="btnLogout">Thoát</button></div>
+    <div class="tabs" style="margin-top:12px">
+        <button id="tabUsers">Người dùng</button>
+        <button id="tabLogs">Nhật ký request</button>
+    </div>
+    <div id="msg"></div>
+
+    <div id="viewUsers">
+        <table>
+            <thead><tr><th>ID</th><th>Tên</th><th>Quyền</th><th>Thao tác</th></tr></thead>
+            <tbody id="userBody"></tbody>
+        </table>
+    </div>
+
+    <div id="viewLogs" class="hidden">
+        <button id="btnRefresh">Làm mới</button>
+        <table>
+            <thead><tr><th>Thời gian</th><th>Method</th><th>URL</th><th>User</th><th>IP</th><th>Status</th><th>ms</th></tr></thead>
+            <tbody id="logBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    let token = null;
+    const $ = id => document.getElementById(id);
+
+    async function api(path, method = 'GET', body) {
+        const res = await fetch(path, {
+            method,
+            headers: Object.assign({ 'Content-Type': 'application/json' },
+                token ? { 'Authorization': 'Bearer ' + token } : {}),
+            body: body ? JSON.stringify(body) : undefined
+        });
+        let data = null;
+        try { data = await res.json(); } catch (e) {}
+        if (res.status === 403) throw new Error('Tài khoản này không phải ADMIN');
+        if (!res.ok) throw new Error((data && (data.error || data.message)) || ('Lỗi ' + res.status));
+        return data;
+    }
+
+    function cell(tr, text) {
+        const td = document.createElement('td');
+        td.textContent = text == null ? '' : text;
+        tr.appendChild(td);
+        return td;
+    }
+
+    $('btnLogin').onclick = async () => {
+        try {
+            const r = await api('/api/auth/login', 'POST', { username: $('u').value, password: $('p').value });
+            if (r.role !== 'ADMIN') throw new Error('Tài khoản này không phải ADMIN');
+            token = r.token;
+            $('me').textContent = r.username;
+            $('login').classList.add('hidden');
+            $('panel').classList.remove('hidden');
+            showTab('users');
+        } catch (e) { $('loginMsg').textContent = e.message; }
+    };
+
+    $('btnLogout').onclick = () => location.reload();
+    $('tabUsers').onclick = () => showTab('users');
+    $('tabLogs').onclick = () => showTab('logs');
+    $('btnRefresh').onclick = loadLogs;
+
+    function showTab(name) {
+        $('msg').textContent = '';
+        $('viewUsers').classList.toggle('hidden', name !== 'users');
+        $('viewLogs').classList.toggle('hidden', name !== 'logs');
+        if (name === 'users') loadUsers(); else loadLogs();
+    }
+
+    async function loadUsers() {
+        try {
+            const users = await api('/api/admin/users');
+            const body = $('userBody');
+            body.innerHTML = '';
+            users.forEach(u => {
+                const tr = document.createElement('tr');
+                cell(tr, u.id); cell(tr, u.username); cell(tr, u.role);
+                const act = document.createElement('td');
+
+                const toggle = document.createElement('button');
+                toggle.textContent = u.role === 'ADMIN' ? 'Hạ xuống USER' : 'Nâng lên ADMIN';
+                toggle.onclick = async () => {
+                    try { await api('/api/admin/users/' + u.id + '/role', 'PUT', { role: u.role === 'ADMIN' ? 'USER' : 'ADMIN' }); loadUsers(); }
+                    catch (e) { $('msg').textContent = e.message; }
+                };
+                const del = document.createElement('button');
+                del.textContent = 'Xóa';
+                del.style.marginLeft = '6px';
+                del.onclick = async () => {
+                    if (!confirm('Xóa user ' + u.username + '?')) return;
+                    try { await api('/api/admin/users/' + u.id, 'DELETE'); loadUsers(); }
+                    catch (e) { $('msg').textContent = e.message; }
+                };
+                act.appendChild(toggle); act.appendChild(del);
+                tr.appendChild(act);
+                body.appendChild(tr);
+            });
+        } catch (e) { $('msg').textContent = e.message; }
+    }
+
+    async function loadLogs() {
+        try {
+            const logs = await api('/api/logs?size=100');
+            const body = $('logBody');
+            body.innerHTML = '';
+            logs.forEach(l => {
+                const tr = document.createElement('tr');
+                cell(tr, l.createdAt ? l.createdAt.replace('T', ' ').substring(0, 19) : '');
+                cell(tr, l.method); cell(tr, l.url); cell(tr, l.username);
+                cell(tr, l.ip); cell(tr, l.status); cell(tr, l.durationMs);
+                body.appendChild(tr);
+            });
+        } catch (e) { $('msg').textContent = e.message; }
+    }
+</script>
+</body>
+</html>
