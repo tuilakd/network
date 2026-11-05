@@ -31,7 +31,7 @@ public class SecurityConfig {
                 .exceptionHandling(e -> e.authenticationEntryPoint(
                         new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/h2-console/**", "/", "/*.html", "/static/**", "/ws/**", "/error").permitAll()
+                        .requestMatchers("/api/auth/**", "/h2-console", "/h2-console/**", "/", "/*.html", "/static/**", "/ws/**", "/error").permitAll()
                         .requestMatchers("/api/admin/**", "/api/logs/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
