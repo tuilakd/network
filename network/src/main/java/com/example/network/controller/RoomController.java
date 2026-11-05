@@ -1,7 +1,8 @@
 package com.example.network.controller;
 
-import com.example.network.entity.request.RoomRequest;
 import com.example.network.entity.ChatRoom;
+import com.example.network.entity.request.RoomRequest;
+import com.example.network.entity.response.ApiMessageResponse;
 import com.example.network.service.RoomService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -10,9 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/rooms")
@@ -28,25 +27,22 @@ public class RoomController {
     }
 
     @GetMapping
-    public List<ChatRoom> listAll() {
-        return roomService.listAll();
+    public ResponseEntity<List<ChatRoom>> listAll() {
+        return ResponseEntity.ok(roomService.listAll());
     }
 
     @GetMapping("/mine")
-    public List<ChatRoom> listMine(Authentication auth) {
-        return roomService.listMine(auth.getName());
+    public ResponseEntity<List<ChatRoom>> listMine(Authentication auth) {
+        return ResponseEntity.ok(roomService.listMine(auth.getName()));
     }
 
     @PostMapping("/{id}/join")
-    public Map<String, String> join(@PathVariable Long id, Authentication auth) {
-        roomService.join(id, auth.getName());
-        Map<String, String> body = new HashMap<>();
-        body.put("message", "Đã tham gia phòng");
-        return body;
+    public ResponseEntity<ApiMessageResponse> join(@PathVariable Long id, Authentication auth) {
+        return ResponseEntity.ok(roomService.join(id, auth.getName()));
     }
 
     @GetMapping("/{id}/members")
-    public List<String> members(@PathVariable Long id, Authentication auth) {
-        return roomService.members(id, auth.getName());
+    public ResponseEntity<List<String>> members(@PathVariable Long id, Authentication auth) {
+        return ResponseEntity.ok(roomService.members(id, auth.getName()));
     }
 }

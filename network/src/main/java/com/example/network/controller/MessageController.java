@@ -20,11 +20,11 @@ public class MessageController {
     private final MessageService messageService;
 
     @GetMapping
-    public List<ChatMessageResponse> history(@PathVariable Long roomId,
-                                             @RequestParam(defaultValue = "0") int page,
-                                             @RequestParam(defaultValue = "50") int size,
-                                             Authentication auth) {
-        return messageService.history(roomId, auth.getName(), page, size);
+    public ResponseEntity<List<ChatMessageResponse>> history(@PathVariable Long roomId,
+                                                             @RequestParam(defaultValue = "0") int page,
+                                                             @RequestParam(defaultValue = "50") int size,
+                                                             Authentication auth) {
+        return ResponseEntity.ok(messageService.history(roomId, auth.getName(), page, size));
     }
 
     @PostMapping
