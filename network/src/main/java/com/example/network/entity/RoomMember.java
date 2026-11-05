@@ -1,11 +1,21 @@
 package com.example.network.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
+/**
+ * Entity lưu mối quan hệ thành viên trong phòng chat.
+ */
 @Entity
 @Table(name = "room_members",
         uniqueConstraints = @UniqueConstraint(columnNames = {"roomId", "username"}))
+@Getter
+@Setter
+@NoArgsConstructor
 public class RoomMember {
 
     @Id
@@ -24,11 +34,4 @@ public class RoomMember {
     public void onCreate() {
         this.joinedAt = LocalDateTime.now();
     }
-
-    public Long getId() { return id; }
-    public Long getRoomId() { return roomId; }
-    public void setRoomId(Long roomId) { this.roomId = roomId; }
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-    public LocalDateTime getJoinedAt() { return joinedAt; }
 }

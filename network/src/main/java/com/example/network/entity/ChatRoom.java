@@ -1,10 +1,20 @@
 package com.example.network.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
+/**
+ * Entity phòng chat trong hệ thống trò chuyện nhóm.
+ */
 @Entity
 @Table(name = "chat_rooms")
+@Getter
+@Setter
+@NoArgsConstructor
 public class ChatRoom {
 
     @Id
@@ -23,11 +33,4 @@ public class ChatRoom {
     public void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
-
-    public Long getId() { return id; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getCreatedBy() { return createdBy; }
-    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
 }

@@ -1,15 +1,20 @@
 package com.example.network.entity.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * DTO yêu cầu cập nhật quyền người dùng (USER hoặc ADMIN).
+ */
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class RoleRequest {
 
-    @NotBlank
-    @Pattern(regexp = "USER|ADMIN", message = "Role phải là USER hoặc ADMIN")
+    @NotBlank(message = "Role không được để trống")
     private String role;
 }

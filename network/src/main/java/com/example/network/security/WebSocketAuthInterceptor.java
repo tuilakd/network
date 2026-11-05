@@ -1,6 +1,7 @@
 package com.example.network.security;
 
 import com.example.network.service.RoomService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessagingException;
@@ -16,7 +17,12 @@ import java.security.Principal;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Interceptor kiểm tra xác thực JWT khi kết nối WebSocket (CONNECT)
+ * và phân quyền thành viên khi đăng ký nhận tin theo phòng (SUBSCRIBE /topic/room.{id}).
+ */
 @Component
+@RequiredArgsConstructor
 public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
     private static final Pattern ROOM_TOPIC = Pattern.compile("^/topic/room\\.(\\d+)$");
@@ -24,14 +30,6 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService userDetailsService;
     private final RoomService roomService;
-
-    public WebSocketAuthInterceptor(JwtUtil jwtUtil,
-                                    CustomUserDetailsService userDetailsService,
-                                    RoomService roomService) {
-        this.jwtUtil = jwtUtil;
-        this.userDetailsService = userDetailsService;
-        this.roomService = roomService;
-    }
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {

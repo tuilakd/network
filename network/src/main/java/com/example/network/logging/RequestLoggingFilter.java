@@ -7,6 +7,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -14,17 +15,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Filter ghi nhật ký mọi request HTTP (method, URL, IP, user, mã HTTP, thời gian xử lý)
+ * vào cơ sở dữ liệu để phục vụ kiểm toán và quản trị.
+ */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
+@RequiredArgsConstructor
 public class RequestLoggingFilter extends OncePerRequestFilter {
 
     private final RequestLogRepository logRepository;
     private final JwtUtil jwtUtil;
-
-    public RequestLoggingFilter(RequestLogRepository logRepository, JwtUtil jwtUtil) {
-        this.logRepository = logRepository;
-        this.jwtUtil = jwtUtil;
-    }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
