@@ -2,13 +2,12 @@ package com.example.network.service.impl;
 
 import com.example.network.entity.request.DataRequest;
 import com.example.network.entity.DataItem;
+import com.example.network.exception.ForbiddenException;
 import com.example.network.exception.ResourceNotFoundException;
 import com.example.network.repository.DataRepository;
 import com.example.network.service.DataService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -59,7 +58,7 @@ public class DataServiceImpl implements DataService {
         }
         DataItem item = found.get();
         if (!item.getOwner().equals(owner)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền với dữ liệu này");
+            throw new ForbiddenException("Bạn không có quyền với dữ liệu này");
         }
         return item;
     }

@@ -2,15 +2,14 @@ package com.example.network.service.impl;
 
 import com.example.network.entity.response.UserSummary;
 import com.example.network.entity.User;
+import com.example.network.exception.BadRequestException;
 import com.example.network.exception.ResourceNotFoundException;
 import com.example.network.repository.RoomMemberRepository;
 import com.example.network.repository.UserRepository;
 import com.example.network.service.AdminService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +26,7 @@ public class AdminServiceImpl implements AdminService {
     public List<UserSummary> listUsers() {
         List<UserSummary> result = new ArrayList<>();
         for (User u : userRepository.findAll()) {
-            result.add(new UserSummary(u.getId(), u.getUsername(), u.getRole()));
+            result.add(new UserSummary(u.getId(), u.getUsername(), u.getEmail(), u.getRole()));
         }
         return result;
     }
@@ -35,15 +34,15 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public UserSummary changeRole(Long userId, String role, String currentUsername) {
         if (!"USER".equals(role) && !"ADMIN".equals(role)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Role phải là USER hoặc ADMIN");
+            throw new BadRequestException("Role phải là USER hoặc ADMIN");
         }
         User user = findUser(userId);
         if (user.getUsername().equals(currentUsername)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không thể tự đổi quyền của chính mình");
+            throw new BadRequestException("Không thể tự đổi quyền của chính mình");
         }
         user.setRole(role);
         userRepository.save(user);
-        return new UserSummary(user.getId(), user.getUsername(), user.getRole());
+        return new UserSummary(user.getId(), user.getUsername(), user.getEmail(), user.getRole());
     }
 
     @Override
@@ -51,7 +50,7 @@ public class AdminServiceImpl implements AdminService {
     public String deleteUser(Long userId, String currentUsername) {
         User user = findUser(userId);
         if (user.getUsername().equals(currentUsername)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không thể tự xóa chính mình");
+            throw new BadRequestException("Không thể tự xóa chính mình");
         }
         memberRepository.deleteByUsername(user.getUsername());
         userRepository.delete(user);

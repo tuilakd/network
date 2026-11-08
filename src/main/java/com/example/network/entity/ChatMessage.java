@@ -28,7 +28,11 @@ public class ChatMessage {
     private String sender;
 
     @Column(nullable = false, length = 2000)
-    private String content;
+    private String content = "";
+
+    private String attachmentUrl;
+
+    private String attachmentType;
 
     private LocalDateTime sentAt;
 

@@ -1,5 +1,6 @@
 package com.example.network.controller;
 
+import com.example.network.entity.ExceptionLog;
 import com.example.network.entity.RequestLog;
 import com.example.network.service.LogService;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * Controller dành riêng cho quản trị viên (ROLE_ADMIN) để xem nhật ký request.
+ * Controller dành riêng cho quản trị viên (ROLE_ADMIN) để xem nhật ký request và lỗi ngoại lệ.
  */
 @Slf4j
 @RestController
@@ -31,5 +32,13 @@ public class LogController {
         log.info("Admin '{}' truy vấn danh sách {} nhật ký request gần nhất", auth.getName(), size);
         List<RequestLog> logs = logService.latest(size);
         return ResponseEntity.status(HttpStatus.OK).body(logs);
+    }
+
+    @GetMapping("/exceptions")
+    public ResponseEntity<List<ExceptionLog>> latestExceptions(@RequestParam(defaultValue = "50") int size,
+                                                               Authentication auth) {
+        log.info("Admin '{}' truy vấn danh sách {} lỗi ngoại lệ gần nhất", auth.getName(), size);
+        List<ExceptionLog> exceptionLogs = logService.latestExceptions(size);
+        return ResponseEntity.status(HttpStatus.OK).body(exceptionLogs);
     }
 }

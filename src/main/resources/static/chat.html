@@ -35,6 +35,7 @@
 <div id="login">
     <h3>Đăng nhập</h3>
     <input id="u" placeholder="Tên đăng nhập">
+    <input id="email" type="email" placeholder="Email (dùng khi đăng ký)">
     <input id="p" type="password" placeholder="Mật khẩu">
     <button id="btnLogin">Đăng nhập</button>
     <button id="btnRegister">Đăng ký</button>
@@ -87,7 +88,11 @@
     /* ---------- Đăng nhập / đăng ký ---------- */
     $('btnRegister').onclick = async () => {
         try {
-            await api('/api/auth/register', 'POST', { username: $('u').value, password: $('p').value });
+            await api('/api/auth/register', 'POST', {
+                username: $('u').value,
+                email: $('email').value,
+                password: $('p').value
+            });
             $('loginMsg').style.color = 'green';
             $('loginMsg').textContent = 'Đăng ký thành công, hãy đăng nhập.';
         } catch (e) { $('loginMsg').style.color = '#c00'; $('loginMsg').textContent = e.message; }

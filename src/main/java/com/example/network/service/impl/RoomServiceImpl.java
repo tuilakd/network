@@ -2,15 +2,15 @@ package com.example.network.service.impl;
 
 import com.example.network.entity.ChatRoom;
 import com.example.network.entity.RoomMember;
+import com.example.network.exception.ConflictException;
+import com.example.network.exception.ForbiddenException;
 import com.example.network.exception.ResourceNotFoundException;
 import com.example.network.repository.ChatRoomRepository;
 import com.example.network.repository.RoomMemberRepository;
 import com.example.network.service.RoomService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +28,7 @@ public class RoomServiceImpl implements RoomService {
     public ChatRoom create(String name, String username) {
         String roomName = name.trim();
         if (roomRepository.existsByName(roomName)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Tên phòng đã tồn tại");
+            throw new ConflictException("Tên phòng đã tồn tại");
         }
         ChatRoom room = new ChatRoom();
         room.setName(roomName);
@@ -56,7 +56,7 @@ public class RoomServiceImpl implements RoomService {
     public void join(Long roomId, String username) {
         findRoom(roomId);
         if (memberRepository.existsByRoomIdAndUsername(roomId, username)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Bạn đã ở trong phòng này");
+            throw new ConflictException("Bạn đã ở trong phòng này");
         }
         addMember(roomId, username);
     }
@@ -84,7 +84,7 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public void requireMember(Long roomId, String username) {
         if (!memberRepository.existsByRoomIdAndUsername(roomId, username)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn chưa tham gia phòng này");
+            throw new ForbiddenException("Bạn chưa tham gia phòng này");
         }
     }
 

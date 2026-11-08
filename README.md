@@ -135,16 +135,32 @@ Sau khi khởi chạy ứng dụng thành công tại cổng `8080`:
 | `GET` | `/api/rooms/{id}/members` | Authenticated | Danh sách thành viên trong phòng (chỉ thành viên) |
 | `GET` | `/api/rooms/{id}/messages` | Authenticated | Lấy lịch sử tin nhắn phòng có phân trang |
 | `POST` | `/api/rooms/{id}/messages` | Authenticated | Gửi tin nhắn vào phòng chat qua REST API |
+| `GET` | `/api/profile/me` | Authenticated | Lấy hồ sơ cá nhân của người dùng hiện tại |
+| `PUT` | `/api/profile/me` | Authenticated | Cập nhật hồ sơ (họ tên, bio, avatar) của chính mình |
+| `GET` | `/api/profile/{username}` | Authenticated | Xem hồ sơ công khai của một người dùng bất kỳ |
+| `POST` | `/api/friends/request` | Authenticated | Gửi lời mời kết bạn tới người dùng khác |
+| `GET` | `/api/friends` | Authenticated | Lấy danh sách bạn bè hiện tại (ACCEPTED) |
+| `GET` | `/api/friends/requests/pending` | Authenticated | Lấy danh sách lời mời kết bạn đang chờ mình duyệt |
+| `POST` | `/api/friends/requests/{id}/accept` | Authenticated | Chấp nhận lời mời kết bạn |
+| `POST` | `/api/friends/requests/{id}/decline` | Authenticated | Từ chối lời mời kết bạn |
+| `DELETE`| `/api/friends/{friendUsername}` | Authenticated | Hủy kết bạn |
+| `POST` | `/api/direct-messages` | Authenticated | Gửi tin nhắn riêng 1-1 cho bạn bè |
+| `GET` | `/api/direct-messages/{friendUsername}` | Authenticated | Lấy lịch sử tin nhắn 1-1 có phân trang |
+| `GET` | `/api/direct-messages/conversations` | Authenticated | Danh sách các cuộc trò chuyện 1-1 gần nhất |
+| `PUT` | `/api/direct-messages/{id}/read` | Authenticated | Đánh dấu tin nhắn đã đọc |
 | `GET` | `/api/admin/users` | `ROLE_ADMIN` | Xem danh sách toàn bộ tài khoản người dùng |
 | `PUT` | `/api/admin/users/{id}/role` | `ROLE_ADMIN` | Thay đổi quyền tài khoản (`USER` <-> `ADMIN`) |
 | `DELETE`| `/api/admin/users/{id}` | `ROLE_ADMIN` | Xóa tài khoản người dùng khỏi hệ thống |
+| `GET` | `/api/admin/error-logs` | `ROLE_ADMIN` | Xem nhật ký lỗi ngoại lệ (có phân trang, lọc theo status, userId, thời gian) |
 | `GET` | `/api/logs` | `ROLE_ADMIN` | Xem danh sách nhật ký các request HTTP gần nhất |
+| `GET` | `/api/logs/exceptions` | `ROLE_ADMIN` | Truy vấn danh sách lỗi ngoại lệ đã lưu trong database |
 
 ---
 
 ## ⚡ WebSocket STOMP Endpoint
 
 - **Endpoint kết nối STOMP**: `/ws` (Xác thực JWT token qua Header `Authorization: Bearer <token>` tại frame `CONNECT`).
-- **Gửi tin nhắn**: `/app/chat.send/{roomId}` với payload `{"content": "..."}`.
+- **Gửi tin nhắn phòng chat**: `/app/chat.send/{roomId}` với payload `{"content": "..."}`.
 - **Kênh nhận tin nhắn phòng**: Đăng ký nhận tại `/topic/room.{roomId}` (Yêu cầu phải là thành viên của phòng).
+- **Kênh nhận tin nhắn riêng 1-1**: Đăng ký nhận tại `/topic/direct.{username}` (Nhận tin nhắn thời gian thực khi bạn bè gửi tới).
 - **Kênh nhận thông báo lỗi riêng**: `/user/queue/errors`.
