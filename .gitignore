@@ -39,7 +39,6 @@ data/
 *.iws
 *.iml
 *.ipr
-out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 
@@ -66,5 +65,14 @@ out/
 .DS_Store
 Thumbs.db
 
-# Subfolder temporary / legacy folder
-network/
+# Thư mục con tạm ở gốc repo (có dấu / đầu nên không đụng tới package com.example.network)
+/network/
+
+# Công cụ AI
+.agents/
+
+# File người dùng tải lên khi chạy app (app.upload.dir=./uploads)
+uploads/
+
+# Cấu hình cục bộ chứa mật khẩu / secret
+application-local.properties
