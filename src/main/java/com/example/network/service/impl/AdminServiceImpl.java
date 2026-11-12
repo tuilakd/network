@@ -4,8 +4,7 @@ import com.example.network.entity.response.UserSummary;
 import com.example.network.entity.User;
 import com.example.network.exception.BadRequestException;
 import com.example.network.exception.ResourceNotFoundException;
-import com.example.network.repository.RoomMemberRepository;
-import com.example.network.repository.UserRepository;
+import com.example.network.repository.*;
 import com.example.network.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +20,11 @@ public class AdminServiceImpl implements AdminService {
 
     private final UserRepository userRepository;
     private final RoomMemberRepository memberRepository;
+    private final FriendshipRepository friendshipRepository;
+    private final DirectMessageRepository directMessageRepository;
+    private final ChatMessageRepository chatMessageRepository;
+    private final DataRepository dataRepository;
+    private final UserProfileRepository profileRepository;
 
     @Override
     public List<UserSummary> listUsers() {
@@ -52,7 +56,13 @@ public class AdminServiceImpl implements AdminService {
         if (user.getUsername().equals(currentUsername)) {
             throw new BadRequestException("Không thể tự xóa chính mình");
         }
-        memberRepository.deleteByUsername(user.getUsername());
+        String name = user.getUsername();
+        memberRepository.deleteByUsername(name);
+        friendshipRepository.deleteByRequesterOrAddressee(name, name);
+        directMessageRepository.deleteBySenderOrRecipient(name, name);
+        chatMessageRepository.deleteBySender(name);
+        dataRepository.deleteByOwner(name);
+        profileRepository.deleteByUsername(name);
         userRepository.delete(user);
         return user.getUsername();
     }

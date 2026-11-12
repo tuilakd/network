@@ -30,7 +30,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return path.startsWith("/h2-console") || path.equals("/favicon.ico");
+        return path.equals("/favicon.ico");
     }
 
     @Override
@@ -47,6 +47,9 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                 String url = request.getRequestURI();
                 if (request.getQueryString() != null) {
                     url += "?" + request.getQueryString();
+                }
+                if (url.length() > 255) {
+                    url = url.substring(0, 255);
                 }
                 log.setUrl(url);
                 log.setIp(request.getRemoteAddr());

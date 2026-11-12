@@ -1,6 +1,7 @@
 package com.example.network.service.impl;
 
 import com.example.network.entity.Friendship;
+import com.example.network.entity.User;
 import com.example.network.entity.response.FriendshipResponse;
 import com.example.network.exception.AppException;
 import com.example.network.exception.ErrorCode;
@@ -25,41 +26,51 @@ public class FriendshipServiceImpl implements FriendshipService {
     @Override
     @Transactional
     public FriendshipResponse sendRequest(String requester, String targetUsername) {
-        if (requester.equalsIgnoreCase(targetUsername)) {
+        if (targetUsername == null || targetUsername.isBlank()) {
+            throw new AppException(ErrorCode.INVALID_INPUT, "Tên người dùng không được để trống");
+        }
+
+        String trimmedTarget = targetUsername.trim();
+        if (requester.equalsIgnoreCase(trimmedTarget)) {
             throw new AppException(ErrorCode.CANNOT_ADD_SELF);
         }
 
-        if (!userRepository.existsByUsername(targetUsername)) {
-            throw new AppException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy người dùng '" + targetUsername + "'");
-        }
+        // Lấy entity User từ DB để lấy username chuẩn xác (đúng chữ hoa/thường)
+        User targetUser = userRepository.findByUsername(trimmedTarget)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy người dùng '" + trimmedTarget + "'"));
 
-        Optional<Friendship> existingOpt = friendshipRepository.findBetweenUsers(requester, targetUsername);
+        String canonicalRequester = userRepository.findByUsername(requester)
+                .map(User::getUsername)
+                .orElse(requester);
+        String canonicalTarget = targetUser.getUsername();
+
+        Optional<Friendship> existingOpt = friendshipRepository.findBetweenUsers(canonicalRequester, canonicalTarget);
         if (existingOpt.isPresent()) {
             Friendship existing = existingOpt.get();
             if ("ACCEPTED".equals(existing.getStatus())) {
                 throw new AppException(ErrorCode.ALREADY_FRIENDS);
             }
             if ("PENDING".equals(existing.getStatus())) {
-                if (existing.getRequester().equals(requester)) {
+                if (existing.getRequester().equalsIgnoreCase(canonicalRequester)) {
                     throw new AppException(ErrorCode.FRIEND_REQUEST_PENDING, "Bạn đã gửi lời mời kết bạn trước đó rồi");
                 } else {
                     throw new AppException(ErrorCode.FRIEND_REQUEST_PENDING, "Người dùng này đã gửi lời mời cho bạn, hãy chấp nhận lời mời");
                 }
             }
-            // Nếu đã từng từ chối (DECLINED), cho phép gửi lại lời mời
-            existing.setRequester(requester);
-            existing.setAddressee(targetUsername);
+            // Nếu đã từng từ chối (DECLINED), cho phép gửi lại lời mời với username chuẩn
+            existing.setRequester(canonicalRequester);
+            existing.setAddressee(canonicalTarget);
             existing.setStatus("PENDING");
             Friendship saved = friendshipRepository.save(existing);
-            return mapToResponse(saved, targetUsername);
+            return mapToResponse(saved, canonicalTarget);
         }
 
         Friendship f = new Friendship();
-        f.setRequester(requester);
-        f.setAddressee(targetUsername);
+        f.setRequester(canonicalRequester);
+        f.setAddressee(canonicalTarget);
         f.setStatus("PENDING");
         Friendship saved = friendshipRepository.save(f);
-        return mapToResponse(saved, targetUsername);
+        return mapToResponse(saved, canonicalTarget);
     }
 
     @Override
@@ -67,7 +78,7 @@ public class FriendshipServiceImpl implements FriendshipService {
         List<Friendship> list = friendshipRepository.findAllAcceptedFriends(username);
         List<FriendshipResponse> result = new ArrayList<>();
         for (Friendship f : list) {
-            String friend = f.getRequester().equals(username) ? f.getAddressee() : f.getRequester();
+            String friend = f.getRequester().equalsIgnoreCase(username) ? f.getAddressee() : f.getRequester();
             result.add(mapToResponse(f, friend));
         }
         return result;
@@ -87,7 +98,7 @@ public class FriendshipServiceImpl implements FriendshipService {
     @Transactional
     public FriendshipResponse acceptRequest(Long requestId, String username) {
         Friendship f = findRequest(requestId);
-        if (!f.getAddressee().equals(username)) {
+        if (!f.getAddressee().equalsIgnoreCase(username)) {
             throw new AppException(ErrorCode.FORBIDDEN, "Bạn không có quyền xử lý lời mời này");
         }
         if (!"PENDING".equals(f.getStatus())) {
@@ -102,7 +113,7 @@ public class FriendshipServiceImpl implements FriendshipService {
     @Transactional
     public FriendshipResponse declineRequest(Long requestId, String username) {
         Friendship f = findRequest(requestId);
-        if (!f.getAddressee().equals(username)) {
+        if (!f.getAddressee().equalsIgnoreCase(username)) {
             throw new AppException(ErrorCode.FORBIDDEN, "Bạn không có quyền xử lý lời mời này");
         }
         if (!"PENDING".equals(f.getStatus())) {
@@ -116,7 +127,10 @@ public class FriendshipServiceImpl implements FriendshipService {
     @Override
     @Transactional
     public void unfriend(String username, String friendUsername) {
-        Optional<Friendship> found = friendshipRepository.findBetweenUsers(username, friendUsername);
+        if (friendUsername == null || friendUsername.isBlank()) {
+            throw new AppException(ErrorCode.INVALID_INPUT, "Tên người dùng không được để trống");
+        }
+        Optional<Friendship> found = friendshipRepository.findBetweenUsers(username, friendUsername.trim());
         if (found.isEmpty() || !"ACCEPTED".equals(found.get().getStatus())) {
             throw new AppException(ErrorCode.BAD_REQUEST, "Hai người hiện không phải là bạn bè");
         }

@@ -17,4 +17,5 @@ public interface DirectMessageRepository extends JpaRepository<DirectMessage, Lo
     List<DirectMessage> findBetweenUsers(@Param("u1") String u1, @Param("u2") String u2, Pageable pageable);
 
     long countBySenderAndRecipientAndIsReadFalse(String sender, String recipient);
+    void deleteBySenderOrRecipient(String sender, String recipient);
 }

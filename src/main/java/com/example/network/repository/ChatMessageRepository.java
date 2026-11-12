@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
     List<ChatMessage> findByRoomIdOrderBySentAtDesc(Long roomId, Pageable pageable);
+    void deleteBySender(String sender);
 }

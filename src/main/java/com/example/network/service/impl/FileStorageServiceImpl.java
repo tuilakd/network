@@ -13,12 +13,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.UUID;
+
+import static org.hibernate.boot.models.spi.JpaEventListener.matchesSignature;
 
 @Slf4j
 @Service
@@ -72,7 +75,9 @@ public class FileStorageServiceImpl implements FileStorageService {
         if (fileType == null) {
             throw new BadRequestException("Loại file không được hỗ trợ. Chỉ chấp nhận ảnh (jpg, png, gif, webp) hoặc ghi âm (mp3, wav, ogg, m4a, webm)");
         }
-
+        if (!matchesSignature(file, ext)) {
+            throw new BadRequestException("Nội dung file không khớp với định dạng " + ext);
+        }
         String uniqueFileName = UUID.randomUUID().toString() + ext;
         try {
             Path targetLocation = this.uploadLocation.resolve(uniqueFileName).normalize();
@@ -154,5 +159,50 @@ public class FileStorageServiceImpl implements FileStorageService {
             return "AUDIO";
         }
         return null;
+    }
+
+    private static int u(byte b) {
+        return b & 0xFF;
+    }
+
+    private boolean matchesSignature(MultipartFile file, String ext) {
+        byte[] h = new byte[12];
+        int n;
+        try (InputStream in = file.getInputStream()) {
+            n = in.readNBytes(h, 0, h.length);
+        } catch (IOException e) {
+            return false;
+        }
+        if (n < 4) {
+            return false;
+        }
+        boolean riff = h[0] == 'R' && h[1] == 'I' && h[2] == 'F' && h[3] == 'F';
+        switch (ext) {
+            case ".jpg":
+            case ".jpeg":
+                return u(h[0]) == 0xFF && u(h[1]) == 0xD8 && u(h[2]) == 0xFF;
+            case ".png":
+                return u(h[0]) == 0x89 && h[1] == 'P' && h[2] == 'N' && h[3] == 'G';
+            case ".gif":
+                return h[0] == 'G' && h[1] == 'I' && h[2] == 'F' && h[3] == '8';
+            case ".webp":
+                return n >= 12 && riff && h[8] == 'W' && h[9] == 'E' && h[10] == 'B' && h[11] == 'P';
+            case ".wav":
+                return n >= 12 && riff && h[8] == 'W' && h[9] == 'A' && h[10] == 'V' && h[11] == 'E';
+            case ".mp3":
+                return (h[0] == 'I' && h[1] == 'D' && h[2] == '3')
+                        || (u(h[0]) == 0xFF && (u(h[1]) & 0xE0) == 0xE0);
+            case ".ogg":
+                return h[0] == 'O' && h[1] == 'g' && h[2] == 'g' && h[3] == 'S';
+            case ".m4a":
+                return n >= 8 && h[4] == 'f' && h[5] == 't' && h[6] == 'y' && h[7] == 'p';
+            case ".webm":
+                // Chrome xuất WebM, Firefox xuất Ogg, Safari xuất MP4 dù client đều đặt tên .webm
+                return (u(h[0]) == 0x1A && u(h[1]) == 0x45 && u(h[2]) == 0xDF && u(h[3]) == 0xA3)
+                        || (h[0] == 'O' && h[1] == 'g' && h[2] == 'g' && h[3] == 'S')
+                        || (n >= 8 && h[4] == 'f' && h[5] == 't' && h[6] == 'y' && h[7] == 'p');
+            default:
+                return false;
+        }
     }
 }

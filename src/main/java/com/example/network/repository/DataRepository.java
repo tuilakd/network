@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface DataRepository extends JpaRepository<DataItem, Long> {
     List<DataItem> findByOwnerOrderByCreatedAtDesc(String owner);
+    void deleteByOwner(String owner);
 }

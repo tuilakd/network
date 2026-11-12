@@ -5,13 +5,21 @@ import com.example.network.service.ErrorLogService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -62,11 +70,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ErrorResponse> handleAppException(AppException e, HttpServletRequest req) {
         ErrorCode ec = e.getErrorCode();
-        int status = ec.getStatus().value();
+        int status = HttpStatus.BAD_REQUEST.value();
         log.warn("Ngoại lệ nghiệp vụ [{}] tại {}: {}", ec.getCode(), req.getRequestURI(), e.getMessage());
         errorLogService.logError(req, e, status, e.getMessage());
         ErrorResponse res = new ErrorResponse(status, ec.getCode(), e.getMessage(), req.getRequestURI());
-        return ResponseEntity.status(ec.getStatus()).body(res);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -99,6 +107,42 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(res);
     }
 
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUpload(MaxUploadSizeExceededException e, HttpServletRequest req) {
+        return respond(HttpStatus.valueOf(413), "PAYLOAD_TOO_LARGE", "Dung lượng file vượt quá giới hạn 10MB", e, req);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleUnreadable(HttpMessageNotReadableException e, HttpServletRequest req) {
+        return respond(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "Dữ liệu gửi lên không đúng định dạng JSON", e, req);
+    }
+
+    @ExceptionHandler({MissingServletRequestParameterException.class, MissingServletRequestPartException.class})
+    public ResponseEntity<ErrorResponse> handleMissingParam(Exception e, HttpServletRequest req) {
+        return respond(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "Thiếu tham số hoặc file bắt buộc", e, req);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException e, HttpServletRequest req) {
+        return respond(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "Giá trị tham số '" + e.getName() + "' không hợp lệ", e, req);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException e, HttpServletRequest req) {
+        return respond(HttpStatus.METHOD_NOT_ALLOWED, "METHOD_NOT_ALLOWED", "Phương thức HTTP không được hỗ trợ cho đường dẫn này", e, req);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResource(NoResourceFoundException e, HttpServletRequest req) {
+        ErrorResponse res = new ErrorResponse(HttpStatus.NOT_FOUND.value(), "RESOURCE_NOT_FOUND", "Không tìm thấy đường dẫn", req.getRequestURI());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(res);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException e, HttpServletRequest req) {
+        return respond(HttpStatus.CONFLICT, "CONFLICT", "Dữ liệu bị trùng hoặc vi phạm ràng buộc", e, req);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleAllExceptions(Exception e, HttpServletRequest req) {
         log.error("Lỗi máy chủ không lường trước (500) tại " + req.getRequestURI(), e);
@@ -107,5 +151,13 @@ public class GlobalExceptionHandler {
         // Phản hồi JSON an toàn, không để lộ thông tin nội bộ
         ErrorResponse res = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "INTERNAL_SERVER_ERROR", "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau", req.getRequestURI());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(res);
+    }
+
+    private ResponseEntity<ErrorResponse> respond(HttpStatus status, String code, String message,
+                                                  Exception e, HttpServletRequest req) {
+        log.warn("Lỗi {} tại {}: {}", status.value(), req.getRequestURI(), e.getMessage());
+        errorLogService.logError(req, e, status.value(), message);
+        ErrorResponse res = new ErrorResponse(status.value(), code, message, req.getRequestURI());
+        return ResponseEntity.status(status).body(res);
     }
 }

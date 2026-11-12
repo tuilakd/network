@@ -30,6 +30,8 @@ public class MessageServiceImpl implements MessageService {
     public ChatMessageResponse send(Long roomId, String username, String content,
                                     String attachmentUrl, String attachmentType) {
         String text = (content == null) ? "" : content.trim();
+        roomService.findRoom(roomId);
+        roomService.requireMember(roomId, username);
         boolean hasAttachment = fileStorageService.validateAttachment(attachmentUrl, attachmentType);
         if ((text.isEmpty() && !hasAttachment) || text.length() > MAX_CONTENT_LENGTH)  {
             throw new IllegalArgumentException("Nội dung tin nhắn không hợp lệ");
