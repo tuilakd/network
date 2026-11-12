@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
     private static final Pattern ROOM_TOPIC = Pattern.compile("^/topic/room\\.(\\d+)$");
-
+    private static final Pattern DIRECT_TOPIC = Pattern.compile("^/topic/direct\\.(.+)$");
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService userDetailsService;
     private final RoomService roomService;
@@ -59,11 +59,18 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             }
             String dest = accessor.getDestination();
             if (dest != null && dest.startsWith("/topic/")) {
-                Matcher m = ROOM_TOPIC.matcher(dest);
-                if (!m.matches()) {
+                Matcher roomMatcher = ROOM_TOPIC.matcher(dest);
+                Matcher directMatcher = DIRECT_TOPIC.matcher(dest);
+                if (roomMatcher.matches()) {
+                    roomService.requireMember(Long.parseLong(roomMatcher.group(1)), user.getName());
+                } else if (directMatcher.matches()) {
+                    // Kênh tin nhắn riêng: chỉ chính chủ mới được đăng ký nhận
+                    if (!directMatcher.group(1).equals(user.getName())) {
+                        throw new MessagingException("Không có quyền nhận kênh tin nhắn của người khác");
+                    }
+                } else {
                     throw new MessagingException("Kênh không hợp lệ");
                 }
-                roomService.requireMember(Long.parseLong(m.group(1)), user.getName());
             }
         }
         return message;

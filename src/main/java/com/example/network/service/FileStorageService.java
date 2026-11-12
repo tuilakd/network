@@ -11,4 +11,6 @@ public interface FileStorageService {
     Resource loadFileAsResource(String fileName);
 
     String determineContentType(String fileName);
+
+    boolean validateAttachment(String fileUrl, String fileType);
 }

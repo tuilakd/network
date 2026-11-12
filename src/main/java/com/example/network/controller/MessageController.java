@@ -40,7 +40,8 @@ public class MessageController {
                                                     @Valid @RequestBody ChatMessageRequest request,
                                                     Authentication auth) {
         log.info("Người dùng '{}' gửi tin nhắn qua REST API tới phòng id={}", auth.getName(), roomId);
-        ChatMessageResponse response = messageService.send(roomId, auth.getName(), request.getContent());
+        ChatMessageResponse response = messageService.send(roomId, auth.getName(), request.getContent(),
+                request.getAttachmentUrl(), request.getAttachmentType());
         log.info("Tin nhắn id={} đã được gửi thành công vào phòng id={}", response.getId(), roomId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

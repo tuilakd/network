@@ -29,7 +29,8 @@ public class ChatSocketController {
                      @Payload ChatMessageRequest request,
                      Principal principal) {
         log.info("Nhận tin nhắn WebSocket từ '{}' vào phòng id={}", principal.getName(), roomId);
-        messageService.send(roomId, principal.getName(), request.getContent());
+        messageService.send(roomId, principal.getName(), request.getContent(),
+                request.getAttachmentUrl(), request.getAttachmentType());
     }
 
     // Lỗi chỉ gửi riêng cho người gửi, qua kênh /user/queue/errors

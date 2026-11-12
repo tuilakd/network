@@ -3,247 +3,346 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Chat nhóm</title>
+    <title>Mini Messenger</title>
     <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; margin: 0; background: #f0f2f5; }
-        .hidden { display: none !important; }
-        #login { max-width: 320px; margin: 80px auto; background: #fff; padding: 24px; border-radius: 8px; }
-        #login input { width: 100%; padding: 8px; margin: 6px 0; }
-        button { padding: 8px 12px; cursor: pointer; }
-        #app { display: flex; height: 100vh; }
-        #sidebar { width: 260px; background: #fff; border-right: 1px solid #ddd; padding: 12px; overflow-y: auto; }
-        #main { flex: 1; display: flex; flex-direction: column; }
-        #header { padding: 12px; background: #fff; border-bottom: 1px solid #ddd; font-weight: bold; }
-        #messages { flex: 1; overflow-y: auto; padding: 12px; }
-        .msg { margin: 6px 0; padding: 8px 10px; background: #fff; border-radius: 8px; max-width: 70%; word-wrap: break-word; }
-        .msg.me { background: #d9fdd3; margin-left: auto; }
-        .msg .who { font-size: 12px; color: #667; font-weight: bold; }
-        .msg .time { font-size: 11px; color: #999; margin-left: 6px; }
-        #form { display: flex; gap: 8px; padding: 12px; background: #fff; border-top: 1px solid #ddd; }
-        #text { flex: 1; padding: 8px; }
-        .room { padding: 8px; border-radius: 6px; margin: 4px 0; cursor: pointer; background: #f6f6f6; }
-        .room.active { background: #cfe3ff; }
-        .room small { color: #777; }
-        #status { font-size: 12px; color: #888; padding: 0 12px 6px; background: #fff; }
-        #err { color: #c00; font-size: 13px; padding: 4px 12px; }
+        :root{--bg:#f4f6fa;--card:#fff;--line:#e3e7ee;--txt:#1d2433;--mut:#6b7488;--pri:#2f6bff;--priT:#fff;--me:#2f6bff;--meT:#fff;--ot:#eef1f6;--err:#d93a3a}
+        @media (prefers-color-scheme:dark){:root{--bg:#12151c;--card:#1b1f29;--line:#2b3140;--txt:#e8ebf2;--mut:#8f98ad;--ot:#262c3a;--pri:#4d84ff}}
+        *{box-sizing:border-box}html,body{height:100%;margin:0}
+        body{font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--txt)}
+        button,input,textarea{font:inherit;color:inherit}
+        button{cursor:pointer;border:0;border-radius:8px;padding:7px 12px;background:var(--pri);color:var(--priT)}
+        button.g{background:transparent;color:var(--mut);border:1px solid var(--line)}button.d{background:var(--err)}
+        button.s{padding:3px 8px;font-size:12px}
+        input,textarea{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--card);width:100%}
+        .hide{display:none!important}
+        #auth{height:100%;display:grid;place-items:center;padding:16px}
+        .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;width:100%;max-width:360px;display:grid;gap:10px}
+        .box h1{margin:0 0 4px;font-size:22px}.tabs{display:flex;gap:6px}.tabs button{flex:1}
+        #app{height:100%;display:grid;grid-template-columns:320px 1fr}
+        aside{background:var(--card);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+        .me{padding:12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line)}
+        .av{width:36px;height:36px;border-radius:50%;background:var(--pri);color:#fff;display:grid;place-items:center;font-weight:600;flex:none;overflow:hidden}
+        .av img{width:100%;height:100%;object-fit:cover}.me b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+        .nav{display:flex;border-bottom:1px solid var(--line)}
+        .nav button{flex:1;background:none;color:var(--mut);border-radius:0;padding:10px 4px;border-bottom:2px solid transparent}
+        .nav button.on{color:var(--pri);border-color:var(--pri)}
+        .list{flex:1;overflow:auto;padding:8px}.row{display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;cursor:pointer}
+        .row:hover,.row.on{background:var(--ot)}.row .t{flex:1;min-width:0}.row .t small{display:block;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .bd{background:var(--err);color:#fff;border-radius:10px;padding:0 7px;font-size:12px}
+        .sec{font-size:12px;color:var(--mut);text-transform:uppercase;margin:10px 4px 4px}.add{display:flex;gap:6px;padding:8px}
+        main{display:flex;flex-direction:column;min-width:0;min-height:0}
+        .head{padding:12px 16px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+        .head b{flex:1}#back{display:none}
+        #msgs{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:6px}
+        .m{max-width:72%;padding:8px 12px;border-radius:14px;background:var(--ot);align-self:flex-start;word-wrap:break-word;white-space:pre-wrap}
+        .m.me{background:var(--me);color:var(--meT);align-self:flex-end}.m small{display:block;opacity:.7;font-size:11px}
+        .m img{max-width:240px;max-height:240px;border-radius:8px;display:block;margin-top:4px}.m audio{margin-top:4px;max-width:240px}
+        .empty{margin:auto;color:var(--mut);text-align:center}
+        .comp{padding:10px;background:var(--card);border-top:1px solid var(--line);display:flex;gap:6px;align-items:center}
+        .comp input[type=text]{flex:1}.rec{background:var(--err)!important;color:#fff!important}
+        #pend{font-size:12px;color:var(--mut);padding:0 12px}
+        #toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:8px 14px;border-radius:8px;z-index:9;max-width:90%}
+        #toast.e{background:var(--err)}
+        .modal{position:fixed;inset:0;background:#0008;display:grid;place-items:center;z-index:5;padding:16px}
+        @media(max-width:700px){#app{grid-template-columns:1fr}#app.chat aside{display:none}#app:not(.chat) main{display:none}#back{display:inline-block}.m{max-width:88%}}
     </style>
 </head>
 <body>
 
-<div id="login">
-    <h3>Đăng nhập</h3>
-    <input id="u" placeholder="Tên đăng nhập">
-    <input id="email" type="email" placeholder="Email (dùng khi đăng ký)">
-    <input id="p" type="password" placeholder="Mật khẩu">
-    <button id="btnLogin">Đăng nhập</button>
-    <button id="btnRegister">Đăng ký</button>
-    <div id="loginMsg" style="color:#c00;margin-top:8px"></div>
+<div id="auth">
+    <div class="box">
+        <h1>Mini Messenger</h1>
+        <div class="tabs"><button id="tLogin">Đăng nhập</button><button id="tReg" class="g">Đăng ký</button></div>
+        <input id="aUser" placeholder="Tên đăng nhập (3-30 ký tự)" autocomplete="username">
+        <input id="aMail" class="hide" type="email" placeholder="Email">
+        <input id="aPass" type="password" placeholder="Mật khẩu (tối thiểu 6 ký tự)" autocomplete="current-password">
+        <button id="aGo">Đăng nhập</button>
+        <small id="aErr" style="color:var(--err)"></small>
+    </div>
 </div>
 
-<div id="app" class="hidden">
-    <div id="sidebar">
-        <div>Xin chào, <b id="me"></b> <button id="btnLogout">Thoát</button></div>
-        <hr>
-        <input id="newRoom" placeholder="Tên phòng mới">
-        <button id="btnCreate">Tạo</button>
-        <h4>Tất cả phòng</h4>
-        <div id="rooms"></div>
-    </div>
-    <div id="main">
-        <div id="header">Chọn một phòng để chat</div>
-        <div id="status">Chưa kết nối</div>
-        <div id="messages"></div>
-        <div id="err"></div>
-        <form id="form">
-            <input id="text" placeholder="Nhập tin nhắn..." autocomplete="off">
-            <button>Gửi</button>
-        </form>
-    </div>
+<div id="app" class="hide">
+    <aside>
+        <div class="me">
+            <div class="av" id="meAv"></div><b id="meName"></b>
+            <button class="g s" id="bProf">Hồ sơ</button>
+            <a id="bAdmin" class="hide" href="admin.html"><button class="g s">Admin</button></a>
+            <button class="g s" id="bOut">Thoát</button>
+        </div>
+        <div class="nav">
+            <button data-t="rooms" class="on">Phòng</button>
+            <button data-t="friends">Bạn bè <span class="bd hide" id="bdF"></span></button>
+            <button data-t="dms">Tin nhắn <span class="bd hide" id="bdD"></span></button>
+        </div>
+        <div id="side" class="list"></div>
+    </aside>
+    <main>
+        <div class="head"><button class="g s" id="back">←</button><b id="cTitle">Chọn một cuộc trò chuyện</b><button class="g s hide" id="bMem">Thành viên</button></div>
+        <div id="msgs"><div class="empty">Chọn phòng hoặc bạn bè ở bên trái để bắt đầu.</div></div>
+        <div id="pend"></div>
+        <div class="comp hide" id="comp">
+            <button class="g" id="bFile" title="Gửi ảnh">📎</button>
+            <input type="file" id="file" class="hide" accept="image/*,audio/*">
+            <button class="g" id="bRec" title="Ghi âm">🎤</button>
+            <input type="text" id="txt" placeholder="Nhập tin nhắn..." maxlength="2000">
+            <button id="bSend">Gửi</button>
+        </div>
+    </main>
 </div>
+
+<div id="modal" class="modal hide"><div class="box" id="mbox"></div></div>
+<div id="toast" class="hide"></div>
 
 <script>
-    let token = null, username = null, role = null;
-    let client = null, currentRoom = null, roomSub = null;
-    let myRooms = new Set();
-    const seen = new Set();
-
+    // ===== Cấu hình =====
+    const API = "";                 // cùng origin với Spring Boot
+    const DM_WS = false;            // đặt true sau khi sửa WebSocketAuthInterceptor cho /topic/direct.{username}
     const $ = id => document.getElementById(id);
+    const S = { token:null, user:null, role:null, tab:"rooms", cur:null, stomp:null, sub:null, myRooms:[], lastId:0, att:null, blobs:{}, timer:null, rec:null };
 
-    async function api(path, method = 'GET', body) {
-        const res = await fetch(path, {
-            method,
-            headers: Object.assign(
-                { 'Content-Type': 'application/json' },
-                token ? { 'Authorization': 'Bearer ' + token } : {}),
-            body: body ? JSON.stringify(body) : undefined
-        });
-        let data = null;
-        try { data = await res.json(); } catch (e) {}
-        if (!res.ok) throw new Error((data && (data.error || data.message)) || ('Lỗi ' + res.status));
+    // ===== Tiện ích =====
+    function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+    function toast(msg, err){ const t=$("toast"); t.textContent=msg; t.className=err?"e":""; clearTimeout(toast.h); toast.h=setTimeout(()=>t.classList.add("hide"),3500); }
+    function fmt(d){ if(!d) return ""; if(Array.isArray(d)) d=new Date(d[0],d[1]-1,d[2],d[3]||0,d[4]||0).toISOString(); const x=new Date(d); return isNaN(x)?"":x.toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"})+" "+x.toLocaleDateString("vi-VN"); }
+    function initial(n){ return esc((n||"?").charAt(0).toUpperCase()); }
+
+    // Gọi API: tự gắn Bearer token, đọc lỗi theo ErrorResponse {message, details}
+    async function api(method, path, body){
+        const h = {}; if(S.token) h.Authorization = "Bearer "+S.token;
+        if(body !== undefined) h["Content-Type"]="application/json";
+        const res = await fetch(API+path, { method, headers:h, body: body!==undefined ? JSON.stringify(body) : undefined });
+        let data = null; const ct = res.headers.get("content-type")||"";
+        if(ct.includes("json")) data = await res.json().catch(()=>null);
+        if(!res.ok){
+            if(res.status===401 && S.token){ logout(); throw new Error("Phiên đăng nhập đã hết hạn"); }
+            let msg = (data && (data.message||data.error)) || ("Lỗi "+res.status);
+            if(data && data.details){ msg += ": " + Object.values(data.details).join("; "); }
+            throw new Error(msg);
+        }
         return data;
     }
+    // /api/files/** yêu cầu JWT nên <img src> không dùng trực tiếp được -> tải bằng fetch rồi tạo blob URL
+    async function blobUrl(url){
+        if(S.blobs[url]) return S.blobs[url];
+        const res = await fetch(API+url, { headers:{Authorization:"Bearer "+S.token} });
+        if(!res.ok) throw new Error("Không tải được file");
+        return S.blobs[url] = URL.createObjectURL(await res.blob());
+    }
 
-    /* ---------- Đăng nhập / đăng ký ---------- */
-    $('btnRegister').onclick = async () => {
-        try {
-            await api('/api/auth/register', 'POST', {
-                username: $('u').value,
-                email: $('email').value,
-                password: $('p').value
-            });
-            $('loginMsg').style.color = 'green';
-            $('loginMsg').textContent = 'Đăng ký thành công, hãy đăng nhập.';
-        } catch (e) { $('loginMsg').style.color = '#c00'; $('loginMsg').textContent = e.message; }
+    // ===== Đăng nhập / đăng ký =====
+    let regMode=false;
+    function setMode(r){ regMode=r; $("aMail").classList.toggle("hide",!r); $("aGo").textContent=r?"Đăng ký":"Đăng nhập"; $("tLogin").className=r?"g":""; $("tReg").className=r?"":"g"; $("aErr").textContent=""; }
+    $("tLogin").onclick=()=>setMode(false); $("tReg").onclick=()=>setMode(true);
+    $("aGo").onclick = async () => {
+        const username=$("aUser").value.trim(), password=$("aPass").value;
+        try{
+            if(regMode){ await api("POST","/api/auth/register",{username,email:$("aMail").value.trim(),password}); setMode(false); toast("Đăng ký thành công, hãy đăng nhập"); return; }
+            const r = await api("POST","/api/auth/login",{username,password});
+            startSession(r.token, r.username, r.role);
+        }catch(e){ $("aErr").textContent=e.message; }
     };
+    $("aPass").onkeydown = e => { if(e.key==="Enter") $("aGo").click(); };
 
-    $('btnLogin').onclick = async () => {
-        try {
-            const r = await api('/api/auth/login', 'POST', { username: $('u').value, password: $('p').value });
-            token = r.token; username = r.username; role = r.role;
-            try { sessionStorage.setItem('chat', JSON.stringify({ token, username, role })); } catch (e) {}
-            startApp();
-        } catch (e) { $('loginMsg').style.color = '#c00'; $('loginMsg').textContent = e.message; }
-    };
-
-    $('btnLogout').onclick = () => {
-        try { sessionStorage.removeItem('chat'); } catch (e) {}
-        if (client) client.deactivate();
+    function startSession(token, user, role){
+        S.token=token; S.user=user; S.role=role;
+        sessionStorage.setItem("mm", JSON.stringify({token,user,role}));
+        $("auth").classList.add("hide"); $("app").classList.remove("hide");
+        $("meName").textContent=user; $("meAv").textContent=user.charAt(0).toUpperCase();
+        $("bAdmin").classList.toggle("hide", role!=="ROLE_ADMIN" && role!=="ADMIN");
+        loadMyAvatar(); connectWs(); showTab("rooms");
+        S.timer = setInterval(poll, 4000);
+    }
+    function logout(){
+        sessionStorage.removeItem("mm"); clearInterval(S.timer);
+        if(S.stomp) S.stomp.deactivate();
         location.reload();
-    };
-
-    /* ---------- Khởi động ---------- */
-    async function startApp() {
-        $('login').classList.add('hidden');
-        $('app').classList.remove('hidden');
-        $('me').textContent = username;
-        await loadRooms();
-        connect();
     }
+    $("bOut").onclick=logout;
 
-    async function loadRooms() {
-        try {
-            const mine = await api('/api/rooms/mine');
-            myRooms = new Set(mine.map(r => r.id));
-            const all = await api('/api/rooms');
-            const box = $('rooms');
-            box.innerHTML = '';
-            all.forEach(r => {
-                const div = document.createElement('div');
-                div.className = 'room' + (r.id === currentRoom ? ' active' : '');
-                const joined = myRooms.has(r.id);
-                div.textContent = r.name + ' ';
-                const small = document.createElement('small');
-                small.textContent = joined ? '(đã tham gia)' : '(chưa tham gia)';
-                div.appendChild(small);
-
-                if (!joined) {
-                    const btn = document.createElement('button');
-                    btn.textContent = 'Tham gia';
-                    btn.style.marginLeft = '6px';
-                    btn.onclick = async ev => {
-                        ev.stopPropagation();
-                        try {
-                            await api('/api/rooms/' + r.id + '/join', 'POST');
-                            await loadRooms();
-                        } catch (e) { showErr(e.message); }
-                    };
-                    div.appendChild(btn);
-                }
-
-                div.onclick = () => openRoom(r, joined);
-                box.appendChild(div);
-            });
-        } catch (e) { showErr(e.message); }
-    }
-    $('btnCreate').onclick = async () => {
-        const name = $('newRoom').value.trim();
-        if (!name) return;
-        try { await api('/api/rooms', 'POST', { name }); $('newRoom').value = ''; await loadRooms(); }
-        catch (e) { showErr(e.message); }
-    };
-
-    /* ---------- WebSocket (STOMP) ---------- */
-    function connect() {
-        const scheme = location.protocol === 'https:' ? 'wss://' : 'ws://';
-        client = new StompJs.Client({
-            brokerURL: scheme + location.host + '/ws',
-            connectHeaders: { Authorization: 'Bearer ' + token },
-            reconnectDelay: 5000,
+    // ===== WebSocket STOMP (tin nhắn phòng realtime) =====
+    function connectWs(){
+        const url = (location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws";
+        S.stomp = new StompJs.Client({ brokerURL:url, connectHeaders:{Authorization:"Bearer "+S.token}, reconnectDelay:4000,
             onConnect: () => {
-                $('status').textContent = 'Đã kết nối (thời gian thực)';
-                client.subscribe('/user/queue/errors', f => showErr(f.body));
-                if (currentRoom) subscribeRoom(currentRoom);
+                S.stomp.subscribe("/user/queue/errors", f => toast(f.body, true));
+                if(DM_WS) S.stomp.subscribe("/topic/direct."+S.user, f => onDirect(JSON.parse(f.body)));
+                if(S.cur && S.cur.type==="room") subRoom(S.cur.id);
             },
-            onWebSocketClose: () => { $('status').textContent = 'Mất kết nối, đang thử lại...'; },
-            onStompError: f => showErr(f.headers['message'] || 'Lỗi STOMP')
-        });
-        client.activate();
+            onStompError: f => toast(f.headers.message||"Lỗi WebSocket", true) });
+        S.stomp.activate();
+    }
+    function subRoom(id){
+        if(S.sub){ S.sub.unsubscribe(); S.sub=null; }
+        if(S.stomp && S.stomp.connected) S.sub = S.stomp.subscribe("/topic/room."+id, f => addMsg(JSON.parse(f.body)));
     }
 
-    function subscribeRoom(roomId) {
-        if (roomSub) { roomSub.unsubscribe(); roomSub = null; }
-        if (!client || !client.connected) return;
-        roomSub = client.subscribe('/topic/room.' + roomId, f => addMessage(JSON.parse(f.body)));
+    // ===== Thanh bên =====
+    document.querySelectorAll(".nav button").forEach(b => b.onclick = () => showTab(b.dataset.t));
+    async function showTab(t){
+        S.tab=t; document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+        try{ if(t==="rooms") await renderRooms(); else if(t==="friends") await renderFriends(); else await renderDms(); }
+        catch(e){ toast(e.message,true); }
+    }
+    async function renderRooms(){
+        const [all, mine] = await Promise.all([api("GET","/api/rooms"), api("GET","/api/rooms/mine")]);
+        S.myRooms = mine.map(r=>r.id);
+        let h = '<div class="add"><input id="newRoom" placeholder="Tên phòng mới"><button id="mkRoom">Tạo</button></div>';
+        for(const r of all){
+            const joined = S.myRooms.includes(r.id);
+            h += '<div class="row'+(S.cur&&S.cur.type==="room"&&S.cur.id===r.id?" on":"")+'" data-room="'+r.id+'" data-name="'+esc(r.name)+'"><div class="av">#</div><div class="t"><b>'+esc(r.name)+'</b><small>'+(joined?"Đã tham gia":"Chưa tham gia")+' · '+esc(r.createdBy)+'</small></div></div>';
+        }
+        $("side").innerHTML = h || '<div class="empty">Chưa có phòng nào</div>';
+        $("mkRoom").onclick = async () => { const n=$("newRoom").value.trim(); if(!n) return; try{ await api("POST","/api/rooms",{name:n}); renderRooms(); }catch(e){ toast(e.message,true);} };
+        document.querySelectorAll("[data-room]").forEach(el => el.onclick = () => openRoom(+el.dataset.room, el.dataset.name));
+    }
+    async function renderFriends(){
+        const [fr, pend] = await Promise.all([api("GET","/api/friends"), api("GET","/api/friends/requests/pending")]);
+        $("bdF").textContent=pend.length; $("bdF").classList.toggle("hide",!pend.length);
+        let h = '<div class="add"><input id="fName" placeholder="Tên tài khoản muốn kết bạn"><button id="fAdd">Gửi</button></div>';
+        if(pend.length){ h+='<div class="sec">Lời mời chờ duyệt</div>';
+            for(const p of pend) h+='<div class="row"><div class="av">'+initial(p.requester)+'</div><div class="t"><b>'+esc(p.requester)+'</b></div><button class="s" data-acc="'+p.id+'">Chấp nhận</button><button class="g s" data-dec="'+p.id+'">Từ chối</button></div>'; }
+        h+='<div class="sec">Bạn bè ('+fr.length+')</div>';
+        for(const f of fr) h+='<div class="row"><div class="av" data-prof="'+esc(f.friendUsername)+'">'+initial(f.friendUsername)+'</div><div class="t" data-dm="'+esc(f.friendUsername)+'"><b>'+esc(f.friendUsername)+'</b><small>Nhấn để nhắn tin</small></div><button class="g s" data-un="'+esc(f.friendUsername)+'">Hủy</button></div>';
+        $("side").innerHTML=h;
+        $("fAdd").onclick = async () => { const u=$("fName").value.trim(); if(!u) return; try{ await api("POST","/api/friends/request",{targetUsername:u}); toast("Đã gửi lời mời"); $("fName").value=""; }catch(e){ toast(e.message,true);} };
+        document.querySelectorAll("[data-acc]").forEach(b=>b.onclick=async()=>{ try{ await api("POST","/api/friends/requests/"+b.dataset.acc+"/accept"); renderFriends(); }catch(e){ toast(e.message,true);} });
+        document.querySelectorAll("[data-dec]").forEach(b=>b.onclick=async()=>{ try{ await api("POST","/api/friends/requests/"+b.dataset.dec+"/decline"); renderFriends(); }catch(e){ toast(e.message,true);} });
+        document.querySelectorAll("[data-un]").forEach(b=>b.onclick=async()=>{ if(!confirm("Hủy kết bạn với "+b.dataset.un+"?")) return; try{ await api("DELETE","/api/friends/"+encodeURIComponent(b.dataset.un)); renderFriends(); }catch(e){ toast(e.message,true);} });
+        document.querySelectorAll("[data-dm]").forEach(el=>el.onclick=()=>openDm(el.dataset.dm));
+        document.querySelectorAll("[data-prof]").forEach(el=>el.onclick=()=>showProfile(el.dataset.prof));
+    }
+    async function renderDms(){
+        const list = await api("GET","/api/direct-messages/conversations");
+        let unread=0, h="";
+        for(const c of list){ unread+=c.unreadCount;
+            h+='<div class="row'+(S.cur&&S.cur.type==="dm"&&S.cur.id===c.friendUsername?" on":"")+'" data-dm="'+esc(c.friendUsername)+'"><div class="av">'+initial(c.friendUsername)+'</div><div class="t"><b>'+esc(c.friendUsername)+'</b><small>'+esc(c.lastMessage||"Chưa có tin nhắn")+'</small></div>'+(c.unreadCount?'<span class="bd">'+c.unreadCount+'</span>':'')+'</div>'; }
+        $("bdD").textContent=unread; $("bdD").classList.toggle("hide",!unread);
+        $("side").innerHTML = h || '<div class="empty">Hãy kết bạn để bắt đầu nhắn tin 1-1</div>';
+        document.querySelectorAll("[data-dm]").forEach(el=>el.onclick=()=>openDm(el.dataset.dm));
     }
 
-    /* ---------- Phòng và tin nhắn ---------- */
-    async function openRoom(room, joined) {
-        try {
-            if (!joined) { showErr('Bạn chưa tham gia phòng này. Hãy bấm nút "Tham gia".'); return; }
-            currentRoom = room.id;
-            $('header').textContent = room.name;
-            $('messages').innerHTML = '';
-            seen.clear();
-            showErr('');
-            subscribeRoom(room.id);
-            const history = await api('/api/rooms/' + room.id + '/messages?size=50');
-            history.forEach(addMessage);
-            await loadRooms();
-        } catch (e) { showErr(e.message); }
+    // ===== Khung chat =====
+    function openPane(title){ $("cTitle").textContent=title; $("comp").classList.remove("hide"); $("msgs").innerHTML=""; $("app").classList.add("chat"); S.lastId=0; clearAtt(); }
+    $("back").onclick=()=>{ $("app").classList.remove("chat"); };
+    async function openRoom(id, name){
+        try{
+            if(!S.myRooms.includes(id)){ await api("POST","/api/rooms/"+id+"/join"); S.myRooms.push(id); }
+            S.cur={type:"room",id,name}; openPane("# "+name); $("bMem").classList.remove("hide");
+            subRoom(id);
+            const list = await api("GET","/api/rooms/"+id+"/messages?page=0&size=50");
+            for(const m of list) addMsg(m);
+            if(!list.length) $("msgs").innerHTML='<div class="empty">Chưa có tin nhắn nào.</div>';
+            if(S.tab==="rooms") renderRooms();
+        }catch(e){ toast(e.message,true); }
     }
-
-    function addMessage(m) {
-        if (m.roomId !== currentRoom || seen.has(m.id)) return;
-        seen.add(m.id);
-        const div = document.createElement('div');
-        div.className = 'msg' + (m.sender === username ? ' me' : '');
-        const who = document.createElement('div');
-        who.className = 'who';
-        who.textContent = m.sender;
-        const time = document.createElement('span');
-        time.className = 'time';
-        time.textContent = new Date(m.sentAt).toLocaleTimeString('vi-VN');
-        who.appendChild(time);
-        const body = document.createElement('div');
-        body.textContent = m.content;          // textContent để tránh chèn HTML độc hại
-        div.appendChild(who);
-        div.appendChild(body);
-        const box = $('messages');
-        box.appendChild(div);
-        box.scrollTop = box.scrollHeight;
+    async function openDm(friend){
+        try{
+            S.cur={type:"dm",id:friend}; openPane(friend); $("bMem").classList.add("hide");
+            if(S.sub){ S.sub.unsubscribe(); S.sub=null; }
+            await loadDm();
+            if(S.tab==="dms") renderDms();
+        }catch(e){ toast(e.message,true); }
     }
+    async function loadDm(){
+        const list = await api("GET","/api/direct-messages/"+encodeURIComponent(S.cur.id)+"?page=0&size=50");
+        const last = list.length ? list[list.length-1].id : 0;
+        if(last===S.lastId && $("msgs").children.length) return;
+        $("msgs").innerHTML=""; S.lastId=0;
+        for(const m of list){ addMsg(m);
+            if(m.recipient===S.user && !(m.read ?? m.isRead)){ api("PUT","/api/direct-messages/"+m.id+"/read").catch(()=>{}); } }
+        if(!list.length) $("msgs").innerHTML='<div class="empty">Hãy gửi lời chào đầu tiên!</div>';
+    }
+    function onDirect(m){ // chỉ dùng khi DM_WS = true
+        const other = m.sender===S.user ? m.recipient : m.sender;
+        if(S.cur && S.cur.type==="dm" && S.cur.id===other){ addMsg(m); if(m.recipient===S.user) api("PUT","/api/direct-messages/"+m.id+"/read").catch(()=>{}); }
+        else toast("Tin nhắn mới từ "+m.sender);
+    }
+    function addMsg(m){
+        const box=$("msgs"); if(m.id<=S.lastId && m.id) return; S.lastId=Math.max(S.lastId,m.id||0);
+        const e=box.querySelector(".empty"); if(e) e.remove();
+        const mine = m.sender===S.user, d=document.createElement("div"); d.className="m"+(mine?" me":"");
+        d.innerHTML = (mine?"":"<small><b>"+esc(m.sender)+"</b></small>") + esc(m.content) + '<small>'+fmt(m.sentAt)+'</small>';
+        if(m.attachmentUrl){
+            const slot=document.createElement("div"); d.insertBefore(slot, d.lastChild);
+            blobUrl(m.attachmentUrl).then(u => {
+                if(m.attachmentType==="IMAGE"){ const i=document.createElement("img"); i.src=u; i.onclick=()=>window.open(u); slot.appendChild(i); }
+                else { const a=document.createElement("audio"); a.controls=true; a.src=u; slot.appendChild(a); }
+            }).catch(()=>{ slot.textContent="[Không tải được file]"; });
+        }
+        const atBottom = box.scrollHeight-box.scrollTop-box.clientHeight < 120;
+        box.appendChild(d); if(atBottom||mine) box.scrollTop=box.scrollHeight;
+    }
+    $("bMem").onclick = async () => { try{ const m=await api("GET","/api/rooms/"+S.cur.id+"/members"); let h='<h3 style="margin:0">Thành viên ('+m.length+')</h3>'; for(const u of m) h+='<div class="row" data-p="'+esc(u)+'"><div class="av">'+initial(u)+'</div><b>'+esc(u)+'</b></div>'; h+='<button class="g" id="mx">Đóng</button>'; modal(h); document.querySelectorAll("[data-p]").forEach(el=>el.onclick=()=>showProfile(el.dataset.p)); }catch(e){ toast(e.message,true);} };
 
-    $('form').onsubmit = e => {
-        e.preventDefault();
-        const text = $('text').value.trim();
-        if (!text || !currentRoom) return;
-        if (!client || !client.connected) { showErr('Chưa kết nối'); return; }
-        client.publish({
-            destination: '/app/chat.send/' + currentRoom,
-            body: JSON.stringify({ content: text })
-        });
-        $('text').value = '';
+    // ===== Gửi tin: văn bản + ảnh/ghi âm =====
+    function clearAtt(){ S.att=null; $("pend").textContent=""; $("file").value=""; }
+    async function upload(file){
+        const fd=new FormData(); fd.append("file",file);
+        const res=await fetch(API+"/api/files/upload",{method:"POST",headers:{Authorization:"Bearer "+S.token},body:fd});
+        const d=await res.json().catch(()=>null);
+        if(!res.ok) throw new Error((d&&d.message)||"Upload thất bại");
+        return d; // {fileUrl,fileType,originalName,size}
+    }
+    $("bFile").onclick=()=>$("file").click();
+    $("file").onchange = async () => { const f=$("file").files[0]; if(!f) return; try{ S.att=await upload(f); $("pend").textContent="Đính kèm: "+S.att.originalName+" (nhấn Gửi)"; }catch(e){ toast(e.message,true); } };
+    $("bRec").onclick = async () => {
+        if(S.rec){ S.rec.stop(); return; }
+        try{
+            const st=await navigator.mediaDevices.getUserMedia({audio:true}), ch=[], r=new MediaRecorder(st); S.rec=r;
+            r.ondataavailable=e=>ch.push(e.data);
+            r.onstop=async()=>{ st.getTracks().forEach(t=>t.stop()); S.rec=null; $("bRec").classList.remove("rec");
+                try{ S.att=await upload(new File([new Blob(ch,{type:"audio/webm"})],"ghi-am.webm",{type:"audio/webm"})); $("pend").textContent="Đã ghi âm (nhấn Gửi)"; }catch(e){ toast(e.message,true);} };
+            r.start(); $("bRec").classList.add("rec");
+        }catch(e){ toast("Không truy cập được micro",true); }
     };
+    async function send(){
+        if(!S.cur) return;
+        const text=$("txt").value.trim(); if(!text && !S.att) return;
+        // Backend yêu cầu content không rỗng -> dùng nhãn thay thế khi chỉ gửi file
+        const content = text || (S.att.fileType==="IMAGE" ? "[Ảnh]" : "[Ghi âm]");
+        const att = S.att; const body = { content };
+        if(att){ body.attachmentUrl=att.fileUrl; body.attachmentType=att.fileType; }
+        try{
+            let r;
+            if(S.cur.type==="room") r = await api("POST","/api/rooms/"+S.cur.id+"/messages", body);
+            else { body.recipient=S.cur.id; r = await api("POST","/api/direct-messages", body); }
+            $("txt").value=""; clearAtt(); addMsg(r);
+            if(att && !r.attachmentUrl) toast("Server chưa lưu file đính kèm (xem ghi chú backend)", true);
+        }catch(e){ toast(e.message,true); }
+    }
+    $("bSend").onclick=send; $("txt").onkeydown=e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); send(); } };
 
-    function showErr(msg) { $('err').textContent = msg || ''; }
+    // ===== Hồ sơ =====
+    function modal(html){ $("mbox").innerHTML=html; $("modal").classList.remove("hide"); const x=$("mx"); if(x) x.onclick=closeModal; }
+    function closeModal(){ $("modal").classList.add("hide"); }
+    $("modal").onclick=e=>{ if(e.target.id==="modal") closeModal(); };
+    async function loadMyAvatar(){ try{ const p=await api("GET","/api/profile/me"); if(p.avatarUrl){ const u=await blobUrl(p.avatarUrl).catch(()=>p.avatarUrl); $("meAv").innerHTML='<img src="'+esc(u)+'">'; } }catch(e){} }
+    $("bProf").onclick=()=>showProfile(S.user);
+    async function showProfile(u){
+        try{
+            const p=await api("GET", u===S.user ? "/api/profile/me" : "/api/profile/"+encodeURIComponent(u));
+            if(u===S.user){
+                modal('<h3 style="margin:0">Hồ sơ của tôi</h3><small>'+esc(p.username)+' · '+esc(p.email||"")+'</small><input id="pN" placeholder="Họ và tên" value="'+esc(p.fullName||"")+'"><textarea id="pB" rows="3" placeholder="Tiểu sử">'+esc(p.bio||"")+'</textarea><input id="pA" placeholder="Avatar URL (có thể dán /api/files/...)" value="'+esc(p.avatarUrl||"")+'"><button id="pS">Lưu</button><button class="g" id="mx">Đóng</button>');
+                $("pS").onclick=async()=>{ try{ await api("PUT","/api/profile/me",{fullName:$("pN").value,bio:$("pB").value,avatarUrl:$("pA").value}); toast("Đã lưu hồ sơ"); closeModal(); loadMyAvatar(); }catch(e){ toast(e.message,true);} };
+            } else {
+                modal('<h3 style="margin:0">'+esc(p.fullName||p.username)+'</h3><small>@'+esc(p.username)+'</small><div>'+esc(p.bio||"Chưa có tiểu sử")+'</div><button class="g" id="mx">Đóng</button>');
+            }
+        }catch(e){ toast(e.message,true); }
+    }
 
-    /* ---------- Khôi phục đăng nhập khi tải lại trang ---------- */
-    try {
-        const saved = JSON.parse(sessionStorage.getItem('chat') || 'null');
-        if (saved) { token = saved.token; username = saved.username; role = saved.role; startApp(); }
-    } catch (e) {}
+    // ===== Cập nhật định kỳ (DM chưa có realtime + huy hiệu chưa đọc) =====
+    async function poll(){
+        try{
+            if(S.cur && S.cur.type==="dm" && !DM_WS) await loadDm();
+            const c=await api("GET","/api/direct-messages/conversations"); let n=0; for(const x of c) n+=x.unreadCount;
+            $("bdD").textContent=n; $("bdD").classList.toggle("hide",!n);
+            if(S.tab==="dms") renderDms();
+        }catch(e){}
+    }
+
+    // ===== Khôi phục phiên =====
+    try{ const s=JSON.parse(sessionStorage.getItem("mm")||"null"); if(s&&s.token) startSession(s.token,s.user,s.role); }catch(e){}
 </script>
 </body>
 </html>

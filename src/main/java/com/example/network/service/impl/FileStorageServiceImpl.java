@@ -126,7 +126,26 @@ public class FileStorageServiceImpl implements FileStorageService {
         if (lower.endsWith(".webm")) return "audio/webm";
         return "application/octet-stream";
     }
+    @Override
+    public boolean validateAttachment(String fileUrl, String fileType) {
+        if (fileUrl == null || fileUrl.isBlank()) {
+            return false;
+        }
+        String prefix = "/api/files/";
+        if (!fileUrl.startsWith(prefix)) {
+            throw new BadRequestException("Đường dẫn file đính kèm không hợp lệ");
+        }
+        String fileName = fileUrl.substring(prefix.length());
+        loadFileAsResource(fileName); // kiểm tra tên file an toàn và file có thật trên server
 
+        int dotIndex = fileName.lastIndexOf('.');
+        String ext = (dotIndex >= 0) ? fileName.substring(dotIndex).toLowerCase() : "";
+        String actualType = determineFileType(ext);
+        if (actualType == null || !actualType.equals(fileType)) {
+            throw new BadRequestException("Loại file đính kèm không khớp với file đã upload");
+        }
+        return true;
+    }
     private String determineFileType(String ext) {
         if (ext.equals(".jpg") || ext.equals(".jpeg") || ext.equals(".png") || ext.equals(".gif") || ext.equals(".webp")) {
             return "IMAGE";

@@ -4,7 +4,9 @@ import com.example.network.entity.response.ChatMessageResponse;
 import com.example.network.entity.ChatMessage;
 import com.example.network.repository.ChatMessageRepository;
 import com.example.network.service.MessageService;
+import com.example.network.service.FileStorageService;
 import com.example.network.service.RoomService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -21,12 +23,15 @@ public class MessageServiceImpl implements MessageService {
 
     private final ChatMessageRepository messageRepository;
     private final RoomService roomService;
+    private final FileStorageService fileStorageService;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override
-    public ChatMessageResponse send(Long roomId, String username, String content) {
+    public ChatMessageResponse send(Long roomId, String username, String content,
+                                    String attachmentUrl, String attachmentType) {
         String text = (content == null) ? "" : content.trim();
-        if (text.isEmpty() || text.length() > MAX_CONTENT_LENGTH) {
+        boolean hasAttachment = fileStorageService.validateAttachment(attachmentUrl, attachmentType);
+        if ((text.isEmpty() && !hasAttachment) || text.length() > MAX_CONTENT_LENGTH)  {
             throw new IllegalArgumentException("Nội dung tin nhắn không hợp lệ");
         }
         roomService.findRoom(roomId);
@@ -36,6 +41,10 @@ public class MessageServiceImpl implements MessageService {
         message.setRoomId(roomId);
         message.setSender(username);
         message.setContent(text);
+            if (hasAttachment) {
+                message.setAttachmentUrl(attachmentUrl);
+                message.setAttachmentType(attachmentType);
+            }
         ChatMessageResponse response = ChatMessageResponse.from(messageRepository.save(message));
 
         // Phát cho mọi người đang mở phòng (WebSocket)

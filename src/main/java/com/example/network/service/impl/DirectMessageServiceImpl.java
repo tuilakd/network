@@ -11,8 +11,11 @@ import com.example.network.repository.DirectMessageRepository;
 import com.example.network.repository.FriendshipRepository;
 import com.example.network.repository.UserRepository;
 import com.example.network.service.DirectMessageService;
+import com.example.network.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import com.example.network.exception.BadRequestException;
+import com.example.network.service.FileStorageService;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,13 +31,18 @@ public class DirectMessageServiceImpl implements DirectMessageService {
     private final DirectMessageRepository directMessageRepository;
     private final FriendshipRepository friendshipRepository;
     private final UserRepository userRepository;
+    private final FileStorageService fileStorageService;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     @Transactional
     public DirectMessageResponse send(String sender, DirectMessageRequest request) {
         String recipient = request.getRecipient().trim();
-        String content = request.getContent().trim();
+        String content = (request.getContent() == null) ? "" : request.getContent().trim();
+        boolean hasAttachment = fileStorageService.validateAttachment(request.getAttachmentUrl(), request.getAttachmentType());
+        if (content.isEmpty() && !hasAttachment) {
+            throw new BadRequestException("Nội dung tin nhắn không được để trống");
+        }
 
         if (sender.equalsIgnoreCase(recipient)) {
             throw new AppException(ErrorCode.CANNOT_CHAT_WITH_SELF);
@@ -51,6 +59,10 @@ public class DirectMessageServiceImpl implements DirectMessageService {
         dm.setSender(sender);
         dm.setRecipient(recipient);
         dm.setContent(content);
+        if (hasAttachment) {
+            dm.setAttachmentUrl(request.getAttachmentUrl());
+            dm.setAttachmentType(request.getAttachmentType());
+        }
         dm.setRead(false);
         DirectMessage saved = directMessageRepository.save(dm);
 

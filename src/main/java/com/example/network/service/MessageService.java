@@ -6,7 +6,10 @@ import java.util.List;
 
 public interface MessageService {
 
-    ChatMessageResponse send(Long roomId, String username, String content);
+    ChatMessageResponse send(Long roomId, String username, String content,
+                             String attachmentUrl, String attachmentType);
 
     List<ChatMessageResponse> history(Long roomId, String username, int page, int size);
+
+
 }
