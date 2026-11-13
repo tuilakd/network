@@ -10,6 +10,10 @@ public interface AdminService {
 
     UserSummary changeRole(Long userId, String role, String currentUsername);
 
-    /** Trả về username của user vừa bị xóa. */
+    /**
+     * Trả về username của user vừa bị xóa.
+     *
+     * @return
+     */
     String deleteUser(Long userId, String currentUsername);
 }

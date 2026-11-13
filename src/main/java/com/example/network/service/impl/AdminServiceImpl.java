@@ -64,7 +64,7 @@ public class AdminServiceImpl implements AdminService {
         dataRepository.deleteByOwner(name);
         profileRepository.deleteByUsername(name);
         userRepository.delete(user);
-        return user.getUsername();
+        return name;
     }
 
     private User findUser(Long id) {
