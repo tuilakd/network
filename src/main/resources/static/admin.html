@@ -1,150 +1,119 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Quản trị</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; background: #f0f2f5; }
-        .hidden { display: none !important; }
-        .box { max-width: 900px; margin: 30px auto; background: #fff; padding: 20px; border-radius: 8px; }
-        input, select { padding: 8px; margin: 4px 0; }
-        button { padding: 6px 10px; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
-        th { background: #f6f6f6; }
-        .tabs button { margin-right: 6px; }
-        #msg { color: #c00; margin-top: 8px; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChatWave – Quản trị</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="admin.css" />
 </head>
 <body>
+  <div class="bg">
+    <span class="blob b1"></span>
+    <span class="blob b2"></span>
+    <span class="blob b3"></span>
+  </div>
 
-<div id="login" class="box" style="max-width:320px">
-    <h3>Đăng nhập quản trị</h3>
-    <input id="u" placeholder="Tên đăng nhập"><br>
-    <input id="p" type="password" placeholder="Mật khẩu"><br>
-    <button id="btnLogin">Đăng nhập</button>
-    <div id="loginMsg" style="color:#c00;margin-top:8px"></div>
-</div>
+  <!-- ===== ĐĂNG NHẬP QUẢN TRỊ (tách riêng với đăng nhập người dùng) ===== -->
+  <section id="adminAuth" class="auth hidden">
+    <div class="auth-card glass">
+      <div class="logo">
+        <div class="logo-icon">🛡️</div>
+        <h1>Chat<span>Wave</span> Admin</h1>
+        <p>Khu vực dành cho quản trị viên</p>
+      </div>
 
-<div id="panel" class="box hidden">
-    <div>Quản trị viên: <b id="me"></b> <button id="btnLogout">Thoát</button></div>
-    <div class="tabs" style="margin-top:12px">
-        <button id="tabUsers">Người dùng</button>
-        <button id="tabLogs">Nhật ký request</button>
+      <form id="adminLoginForm" class="form" autocomplete="off">
+        <label class="field">
+          <input type="text" id="adminUser" required placeholder=" " />
+          <span>Tài khoản quản trị</span>
+        </label>
+        <label class="field">
+          <input type="password" id="adminPass" required placeholder=" " />
+          <span>Mật khẩu</span>
+        </label>
+        <button class="btn primary" type="submit"><span class="btn-text">Đăng nhập quản trị</span><i class="spinner"></i></button>
+      </form>
+
+      <p id="adminAuthError" class="auth-error"></p>
+      <a class="admin-link" href="index.html">← Về trang nhắn tin</a>
     </div>
-    <div id="msg"></div>
+  </section>
 
-    <div id="viewUsers">
-        <table>
-            <thead><tr><th>ID</th><th>Tên</th><th>Quyền</th><th>Thao tác</th></tr></thead>
-            <tbody id="userBody"></tbody>
-        </table>
-    </div>
+  <!-- ===== TRANG QUẢN TRỊ ===== -->
+  <main id="adminApp" class="admin glass hidden">
+    <aside class="admin-side">
+      <div class="brand">
+        <span class="brand-icon">💬</span>
+        <div><strong>ChatWave</strong><small>Quản trị</small></div>
+      </div>
 
-    <div id="viewLogs" class="hidden">
-        <button id="btnRefresh">Làm mới</button>
-        <table>
-            <thead><tr><th>Thời gian</th><th>Method</th><th>URL</th><th>User</th><th>IP</th><th>Status</th><th>ms</th></tr></thead>
-            <tbody id="logBody"></tbody>
-        </table>
-    </div>
-</div>
+      <nav class="nav">
+        <button class="nav-btn active" data-view="users" type="button">👥 <span>Người dùng</span></button>
+        <button class="nav-btn" data-view="logs" type="button">📜 <span>Nhật ký request</span></button>
+      </nav>
 
-<script>
-    let token = null;
-    const $ = id => document.getElementById(id);
+      <div class="spacer"></div>
 
-    async function api(path, method = 'GET', body) {
-        const res = await fetch(path, {
-            method,
-            headers: Object.assign({ 'Content-Type': 'application/json' },
-                token ? { 'Authorization': 'Bearer ' + token } : {}),
-            body: body ? JSON.stringify(body) : undefined
-        });
-        let data = null;
-        try { data = await res.json(); } catch (e) {}
-        if (res.status === 403) throw new Error('Tài khoản này không phải ADMIN');
-        if (!res.ok) throw new Error((data && (data.error || data.message)) || ('Lỗi ' + res.status));
-        return data;
-    }
+      <div class="side-foot">
+        <div class="who">
+          <div class="avatar sm" id="adminAvatar">A</div>
+          <div><strong id="adminName">Admin</strong><small>Quản trị viên</small></div>
+        </div>
+        <div class="foot-actions">
+          <button class="icon-btn" id="adminTheme" title="Đổi giao diện sáng/tối" type="button">🌓</button>
+          <button class="icon-btn" id="adminLogout" title="Đăng xuất" type="button">🚪</button>
+        </div>
+      </div>
+    </aside>
 
-    function cell(tr, text) {
-        const td = document.createElement('td');
-        td.textContent = text == null ? '' : text;
-        tr.appendChild(td);
-        return td;
-    }
+    <section class="admin-main">
+      <header class="admin-head">
+        <h2 id="viewTitle">Người dùng</h2>
+        <button class="btn-sm" id="adminRefresh" type="button">⟳ Tải lại</button>
+      </header>
 
-    $('btnLogin').onclick = async () => {
-        try {
-            const r = await api('/api/auth/login', 'POST', { username: $('u').value, password: $('p').value });
-            if (r.role !== 'ADMIN') throw new Error('Tài khoản này không phải ADMIN');
-            token = r.token;
-            $('me').textContent = r.username;
-            $('login').classList.add('hidden');
-            $('panel').classList.remove('hidden');
-            showTab('users');
-        } catch (e) { $('loginMsg').textContent = e.message; }
-    };
+      <div class="admin-body">
+        <!-- Người dùng -->
+        <div id="view-users" class="view">
+          <div class="toolbar">
+            <input type="text" id="userSearch" placeholder="Tìm theo tên hoặc tên đăng nhập..." />
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Người dùng</th><th>Email</th><th>Vai trò</th><th>Thao tác</th></tr></thead>
+              <tbody id="usersBody"></tbody>
+            </table>
+          </div>
+        </div>
 
-    $('btnLogout').onclick = () => location.reload();
-    $('tabUsers').onclick = () => showTab('users');
-    $('tabLogs').onclick = () => showTab('logs');
-    $('btnRefresh').onclick = loadLogs;
+        <!-- Nhật ký -->
+        <div id="view-logs" class="view hidden">
+          <div class="toolbar">
+            <input type="text" id="logSearch" placeholder="Lọc theo đường dẫn, người dùng, trạng thái..." />
+            <label class="check"><input type="checkbox" id="logAuto" /> Tự làm mới (5 giây)</label>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Thời gian</th><th>Method</th><th>Đường dẫn</th><th>Trạng thái</th><th>Người dùng</th><th>IP</th><th>Xử lý</th></tr></thead>
+              <tbody id="logBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
 
-    function showTab(name) {
-        $('msg').textContent = '';
-        $('viewUsers').classList.toggle('hidden', name !== 'users');
-        $('viewLogs').classList.toggle('hidden', name !== 'logs');
-        if (name === 'users') loadUsers(); else loadLogs();
-    }
+  <div id="toasts" class="toasts"></div>
 
-    async function loadUsers() {
-        try {
-            const users = await api('/api/admin/users');
-            const body = $('userBody');
-            body.innerHTML = '';
-            users.forEach(u => {
-                const tr = document.createElement('tr');
-                cell(tr, u.id); cell(tr, u.username); cell(tr, u.role);
-                const act = document.createElement('td');
-
-                const toggle = document.createElement('button');
-                toggle.textContent = u.role === 'ADMIN' ? 'Hạ xuống USER' : 'Nâng lên ADMIN';
-                toggle.onclick = async () => {
-                    try { await api('/api/admin/users/' + u.id + '/role', 'PUT', { role: u.role === 'ADMIN' ? 'USER' : 'ADMIN' }); loadUsers(); }
-                    catch (e) { $('msg').textContent = e.message; }
-                };
-                const del = document.createElement('button');
-                del.textContent = 'Xóa';
-                del.style.marginLeft = '6px';
-                del.onclick = async () => {
-                    if (!confirm('Xóa user ' + u.username + '?')) return;
-                    try { await api('/api/admin/users/' + u.id, 'DELETE'); loadUsers(); }
-                    catch (e) { $('msg').textContent = e.message; }
-                };
-                act.appendChild(toggle); act.appendChild(del);
-                tr.appendChild(act);
-                body.appendChild(tr);
-            });
-        } catch (e) { $('msg').textContent = e.message; }
-    }
-
-    async function loadLogs() {
-        try {
-            const logs = await api('/api/logs?size=100');
-            const body = $('logBody');
-            body.innerHTML = '';
-            logs.forEach(l => {
-                const tr = document.createElement('tr');
-                cell(tr, l.createdAt ? l.createdAt.replace('T', ' ').substring(0, 19) : '');
-                cell(tr, l.method); cell(tr, l.url); cell(tr, l.username);
-                cell(tr, l.ip); cell(tr, l.status); cell(tr, l.durationMs);
-                body.appendChild(tr);
-            });
-        } catch (e) { $('msg').textContent = e.message; }
-    }
-</script>
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="admin.js"></script>
 </body>
 </html>
