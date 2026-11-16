@@ -1,6 +1,12 @@
-package com.example.network.exception;
+package com.example.network.exception.handle;
 
 import com.example.network.entity.response.ErrorResponse;
+import com.example.network.exception.AppException;
+import com.example.network.exception.BadRequestException;
+import com.example.network.exception.ConflictException;
+import com.example.network.exception.ForbiddenException;
+import com.example.network.exception.ResourceNotFoundException;
+import com.example.network.exception.code.DomainCode;
 import com.example.network.service.ErrorLogService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -69,7 +75,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ErrorResponse> handleAppException(AppException e, HttpServletRequest req) {
-        ErrorCode ec = e.getErrorCode();
+        DomainCode ec = e.getErrorCode();
         int status = HttpStatus.BAD_REQUEST.value();
         log.warn("Ngoại lệ nghiệp vụ [{}] tại {}: {}", ec.getCode(), req.getRequestURI(), e.getMessage());
         errorLogService.logError(req, e, status, e.getMessage());

@@ -1,10 +1,12 @@
-package com.example.network.exception;
+package com.example.network.exception.code;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 @Getter
-public enum ErrorCode {
+@AllArgsConstructor
+public enum DomainCode implements NetErrorCode {
     BAD_REQUEST("NET-001", "Yêu cầu không hợp lệ", HttpStatus.BAD_REQUEST),
     INVALID_INPUT("NET-002", "Dữ liệu đầu vào không đúng định dạng", HttpStatus.BAD_REQUEST),
     CANNOT_ADD_SELF("NET-003", "Không thể tự kết bạn với chính mình", HttpStatus.BAD_REQUEST),
@@ -37,12 +39,7 @@ public enum ErrorCode {
     INTERNAL_SERVER_ERROR("NET-023", "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final String code;
-    private final String defaultMessage;
+    private final String message;
     private final HttpStatus status;
 
-    ErrorCode(String code, String defaultMessage, HttpStatus status) {
-        this.code = code;
-        this.defaultMessage = defaultMessage;
-        this.status = status;
-    }
 }

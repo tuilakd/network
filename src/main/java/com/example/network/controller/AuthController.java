@@ -5,7 +5,7 @@ import com.example.network.entity.request.RegisterRequest;
 import com.example.network.entity.response.AuthResponse;
 import com.example.network.entity.response.UserResponse;
 import com.example.network.exception.AppException;
-import com.example.network.exception.ErrorCode;
+import com.example.network.exception.code.DomainCode;
 import com.example.network.security.LoginRateLimiter;
 import com.example.network.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -49,13 +49,13 @@ public class AuthController {
         try {
             response = authService.login(request);
         } catch (AppException e) {
-            if (e.getErrorCode() == ErrorCode.INVALID_CREDENTIALS) {
+            if (e.getErrorCode() == DomainCode.INVALID_CREDENTIALS) {
                 loginRateLimiter.recordFailure(key);
             }
             throw e;
         }
         loginRateLimiter.recordSuccess(key);
-        log.info("Đăng nhập thành công: username={}, role={}", response.getUsername(), response.getRole());
+        log.info("Đăng nhập thành công: username={}, role={}", response.username(), response.role());
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 }

@@ -6,7 +6,7 @@ import com.example.network.entity.request.RegisterRequest;
 import com.example.network.entity.response.UserResponse;
 import com.example.network.entity.User;
 import com.example.network.exception.AppException;
-import com.example.network.exception.ErrorCode;
+import com.example.network.exception.code.DomainCode;
 import com.example.network.repository.UserRepository;
 import com.example.network.security.JwtUtil;
 import com.example.network.service.AuthService;
@@ -29,11 +29,11 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public UserResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new AppException(ErrorCode.USERNAME_EXISTS);
+            throw new AppException(DomainCode.USERNAME_EXISTS);
         }
         String email = request.getEmail().trim().toLowerCase();
         if (userRepository.existsByEmail(email)) {
-            throw new AppException(ErrorCode.EMAIL_EXISTS);
+            throw new AppException(DomainCode.EMAIL_EXISTS);
         }
         User user = new User();
         user.setUsername(request.getUsername());
@@ -51,11 +51,11 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse login(LoginRequest request) {
         Optional<User> found = userRepository.findByUsername(request.getUsername());
         if (found.isEmpty()) {
-            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+            throw new AppException(DomainCode.INVALID_CREDENTIALS);
         }
         User user = found.get();
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+            throw new AppException(DomainCode.INVALID_CREDENTIALS);
         }
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole());
         return new AuthResponse(token, user.getUsername(), user.getRole());

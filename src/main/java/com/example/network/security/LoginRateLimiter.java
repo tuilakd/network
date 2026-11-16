@@ -1,7 +1,7 @@
 package com.example.network.security;
 
 import com.example.network.exception.AppException;
-import com.example.network.exception.ErrorCode;
+import com.example.network.exception.code.DomainCode;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,7 +31,7 @@ public class LoginRateLimiter {
         synchronized (e) {
             if (e.lockedUntil > now) {
                 long seconds = (e.lockedUntil - now + 999) / 1000;
-                throw new AppException(ErrorCode.TOO_MANY_REQUESTS,
+                throw new AppException(DomainCode.TOO_MANY_REQUESTS,
                         "Đăng nhập sai quá nhiều lần, vui lòng thử lại sau " + seconds + " giây");
             }
         }

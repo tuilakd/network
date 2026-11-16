@@ -1,14 +1,7 @@
 package com.example.network.entity.response;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import com.example.network.entity.enums.UserRole;
 
-@Getter
-@RequiredArgsConstructor
-public class AuthResponse {
+public record AuthResponse(String token, String username, UserRole role) {
 
-    private final String token;
-    private final String username;
-    private final String role;
-    private final String type = "Bearer";
 }

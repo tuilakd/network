@@ -1,5 +1,6 @@
 package com.example.network.entity;
 
+import com.example.network.entity.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,5 +29,5 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    private String role = "USER";
+    private UserRole role;
 }

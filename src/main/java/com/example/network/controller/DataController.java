@@ -27,7 +27,7 @@ public class DataController {
 
     @GetMapping("/hello")
     public ResponseEntity<ApiMessageResponse> hello(Authentication auth) {
-        log.info("Người dùng '{}' truy cập endpoint chào hỏi", auth.getName());
+        log.info("Người dùng {{}} truy cập endpoint chào hỏi", auth.getName());
         return ResponseEntity.status(HttpStatus.OK).body(new ApiMessageResponse("Xin chào, " + auth.getName()));
     }
 
