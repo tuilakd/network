@@ -70,11 +70,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ErrorResponse> handleAppException(AppException e, HttpServletRequest req) {
         ErrorCode ec = e.getErrorCode();
-        int status = HttpStatus.BAD_REQUEST.value();
+        HttpStatus httpStatus = ec.getStatus();
+        int status = httpStatus.value();
+
         log.warn("Ngoại lệ nghiệp vụ [{}] tại {}: {}", ec.getCode(), req.getRequestURI(), e.getMessage());
         errorLogService.logError(req, e, status, e.getMessage());
         ErrorResponse res = new ErrorResponse(status, ec.getCode(), e.getMessage(), req.getRequestURI());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
+        return ResponseEntity.status(httpStatus).body(res);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
