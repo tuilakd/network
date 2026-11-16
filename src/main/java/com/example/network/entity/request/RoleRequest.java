@@ -1,5 +1,6 @@
 package com.example.network.entity.request;
 
+import com.example.network.entity.enums.UserRole;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,5 +17,5 @@ import lombok.Setter;
 public class RoleRequest {
 
     @NotBlank(message = "Role không được để trống")
-    private String role;
+    private UserRole role;
 }

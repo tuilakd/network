@@ -1,5 +1,6 @@
 package com.example.network.entity.response;
 
+import com.example.network.entity.enums.FriendShipStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,7 +20,7 @@ public class FriendshipResponse {
     private Long id;
     private String requester;
     private String addressee;
-    private String status;
+    private FriendShipStatus status;
     private String friendUsername;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

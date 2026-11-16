@@ -1,6 +1,7 @@
 package com.example.network.repository;
 
 import com.example.network.entity.Friendship;
+import com.example.network.entity.enums.FriendShipStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.Query;
@@ -10,7 +11,7 @@ import java.util.Optional;
 
 public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
 
-    List<Friendship> findByAddresseeAndStatus(String addressee, String status);
+    List<Friendship> findByAddresseeAndStatus(String addressee, FriendShipStatus status);
 
     @Query("SELECT f FROM Friendship f WHERE f.status = 'ACCEPTED' AND (f.requester = :username OR f.addressee = :username)")
     List<Friendship> findAllAcceptedFriends(@Param("username") String username);

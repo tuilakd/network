@@ -1,5 +1,6 @@
 package com.example.network.entity.response;
 
+import com.example.network.entity.enums.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,5 +18,5 @@ public class UserSummary {
     private Long id;
     private String username;
     private String email;
-    private String role;
+    private UserRole role;
 }

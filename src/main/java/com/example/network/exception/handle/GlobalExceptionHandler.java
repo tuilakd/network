@@ -1,6 +1,8 @@
-package com.example.network.exception;
+package com.example.network.exception.handle;
 
 import com.example.network.entity.response.ErrorResponse;
+import com.example.network.exception.*;
+import com.example.network.exception.code.DomainCode;
 import com.example.network.service.ErrorLogService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -69,14 +71,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ErrorResponse> handleAppException(AppException e, HttpServletRequest req) {
-        ErrorCode ec = e.getErrorCode();
-        HttpStatus httpStatus = ec.getStatus();
-        int status = httpStatus.value();
-
+        DomainCode ec = e.getErrorCode();
+        int status = HttpStatus.BAD_REQUEST.value();
         log.warn("Ngoại lệ nghiệp vụ [{}] tại {}: {}", ec.getCode(), req.getRequestURI(), e.getMessage());
         errorLogService.logError(req, e, status, e.getMessage());
         ErrorResponse res = new ErrorResponse(status, ec.getCode(), e.getMessage(), req.getRequestURI());
-        return ResponseEntity.status(httpStatus).body(res);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

@@ -4,7 +4,9 @@ import com.example.network.entity.ChatRoom;
 import com.example.network.entity.RoomMember;
 import com.example.network.exception.ConflictException;
 import com.example.network.exception.ForbiddenException;
+import com.example.network.exception.NetError;
 import com.example.network.exception.ResourceNotFoundException;
+import com.example.network.exception.code.DomainCode;
 import com.example.network.repository.ChatRoomRepository;
 import com.example.network.repository.RoomMemberRepository;
 import com.example.network.service.RoomService;
@@ -28,7 +30,7 @@ public class RoomServiceImpl implements RoomService {
     public ChatRoom create(String name, String username) {
         String roomName = name.trim();
         if (roomRepository.existsByName(roomName)) {
-            throw new ConflictException("Tên phòng đã tồn tại");
+            throw new ConflictException(new NetError(DomainCode.ROOM_NAME_EXISTS));
         }
         ChatRoom room = new ChatRoom();
         room.setName(roomName);
@@ -56,7 +58,7 @@ public class RoomServiceImpl implements RoomService {
     public void join(Long roomId, String username) {
         findRoom(roomId);
         if (memberRepository.existsByRoomIdAndUsername(roomId, username)) {
-            throw new ConflictException("Bạn đã ở trong phòng này");
+            throw new ConflictException(new NetError(DomainCode.ALREADY_ROOM_MEMBER));
         }
         addMember(roomId, username);
     }
@@ -84,7 +86,7 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public void requireMember(Long roomId, String username) {
         if (!memberRepository.existsByRoomIdAndUsername(roomId, username)) {
-            throw new ForbiddenException("Bạn chưa tham gia phòng này");
+            throw new ForbiddenException(new NetError(DomainCode.NOT_ROOM_MEMBER));
         }
     }
 

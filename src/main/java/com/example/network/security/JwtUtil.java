@@ -1,5 +1,6 @@
 package com.example.network.security;
 
+import com.example.network.entity.enums.UserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -23,7 +24,7 @@ public class JwtUtil {
         this.expirationMs = expirationMs;
     }
 
-    public String generateToken(String username, String role) {
+    public String generateToken(String username, UserRole role) {
         Date now = new Date();
         return Jwts.builder()
                 .subject(username)

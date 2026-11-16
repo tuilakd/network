@@ -7,7 +7,7 @@ import com.example.network.entity.request.DirectMessageRequest;
 import com.example.network.entity.response.ConversationResponse;
 import com.example.network.entity.response.DirectMessageResponse;
 import com.example.network.exception.AppException;
-import com.example.network.exception.ErrorCode;
+import com.example.network.exception.code.DomainCode;
 import com.example.network.repository.DirectMessageRepository;
 import com.example.network.repository.FriendshipRepository;
 import com.example.network.repository.UserRepository;
@@ -39,17 +39,17 @@ public class DirectMessageServiceImpl implements DirectMessageService {
     @Transactional
     public DirectMessageResponse send(String sender, DirectMessageRequest request) {
         if (request == null || request.getRecipient() == null || request.getRecipient().isBlank()) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Người nhận không được để trống");
+            throw new AppException(DomainCode.INVALID_INPUT, "Người nhận không được để trống");
         }
 
         String trimmedRecipient = request.getRecipient().trim();
         if (sender.equalsIgnoreCase(trimmedRecipient)) {
-            throw new AppException(ErrorCode.CANNOT_CHAT_WITH_SELF);
+            throw new AppException(DomainCode.CANNOT_CHAT_WITH_SELF);
         }
 
         // Lấy User từ DB để chuẩn hóa đúng chữ hoa/thường cho DB và WebSocket topic
         User recipientUser = userRepository.findByUsername(trimmedRecipient)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException(DomainCode.USER_NOT_FOUND));
 
         String canonicalSender = userRepository.findByUsername(sender)
                 .map(User::getUsername)
@@ -62,7 +62,7 @@ public class DirectMessageServiceImpl implements DirectMessageService {
         String content = (request.getContent() == null) ? "" : request.getContent().trim();
         boolean hasAttachment = fileStorageService.validateAttachment(request.getAttachmentUrl(), request.getAttachmentType());
         if (content.isEmpty() && !hasAttachment) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Nội dung tin nhắn không được để trống");
+            throw new AppException(DomainCode.INVALID_INPUT, "Nội dung tin nhắn không được để trống");
         }
 
         DirectMessage dm = new DirectMessage();
@@ -101,12 +101,12 @@ public class DirectMessageServiceImpl implements DirectMessageService {
     @Override
     public List<DirectMessageResponse> history(String currentUser, String friendUsername, int page, int size) {
         if (friendUsername == null || friendUsername.isBlank()) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Tên người dùng không được để trống");
+            throw new AppException(DomainCode.INVALID_INPUT, "Tên người dùng không được để trống");
         }
 
         String friend = friendUsername.trim();
         if (currentUser.equalsIgnoreCase(friend)) {
-            throw new AppException(ErrorCode.CANNOT_CHAT_WITH_SELF);
+            throw new AppException(DomainCode.CANNOT_CHAT_WITH_SELF);
         }
 
         checkAreFriends(currentUser, friend);
@@ -148,11 +148,11 @@ public class DirectMessageServiceImpl implements DirectMessageService {
     public DirectMessageResponse markAsRead(Long messageId, String currentUser) {
         Optional<DirectMessage> found = directMessageRepository.findById(messageId);
         if (found.isEmpty()) {
-            throw new AppException(ErrorCode.MESSAGE_NOT_FOUND);
+            throw new AppException(DomainCode.MESSAGE_NOT_FOUND);
         }
         DirectMessage dm = found.get();
         if (!dm.getRecipient().equalsIgnoreCase(currentUser)) {
-            throw new AppException(ErrorCode.NOT_MESSAGE_RECIPIENT);
+            throw new AppException(DomainCode.NOT_MESSAGE_RECIPIENT);
         }
         dm.setRead(true);
         DirectMessage saved = directMessageRepository.save(dm);
@@ -162,7 +162,7 @@ public class DirectMessageServiceImpl implements DirectMessageService {
     private void checkAreFriends(String user1, String user2) {
         Optional<Friendship> friendshipOpt = friendshipRepository.findBetweenUsers(user1, user2);
         if (friendshipOpt.isEmpty() || !"ACCEPTED".equals(friendshipOpt.get().getStatus())) {
-            throw new AppException(ErrorCode.NOT_FRIENDS);
+            throw new AppException(DomainCode.NOT_FRIENDS);
         }
     }
 

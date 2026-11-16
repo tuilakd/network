@@ -1,9 +1,12 @@
 package com.example.network.entity;
 
+import com.example.network.entity.enums.FriendShipStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -31,10 +34,12 @@ public class Friendship {
     private String addressee;
 
     @Column(nullable = false)
-    private String status = "PENDING";
+    private FriendShipStatus status;
 
+    @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @UpdateTimestamp
     private LocalDateTime updatedAt;
 
     @PrePersist

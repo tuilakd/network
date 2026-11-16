@@ -1,5 +1,6 @@
 package com.example.network.exception;
 
+import com.example.network.exception.code.DomainCode;
 import lombok.Getter;
 
 /**
@@ -8,15 +9,15 @@ import lombok.Getter;
 @Getter
 public class AppException extends RuntimeException {
 
-    private final ErrorCode errorCode;
+    private final DomainCode errorCode;
 
-    public AppException(ErrorCode errorCode) {
-        super(errorCode.getDefaultMessage());
+    public AppException(DomainCode errorCode) {
+        super(errorCode.getMessage());
         this.errorCode = errorCode;
     }
 
-    public AppException(ErrorCode errorCode, String customMessage) {
-        super(customMessage != null && !customMessage.isBlank() ? customMessage : errorCode.getDefaultMessage());
+    public AppException(DomainCode errorCode, String customMessage) {
+        super(customMessage != null && !customMessage.isBlank() ? customMessage : errorCode.getMessage());
         this.errorCode = errorCode;
     }
 }

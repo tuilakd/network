@@ -3,7 +3,9 @@ package com.example.network.service.impl;
 import com.example.network.entity.request.DataRequest;
 import com.example.network.entity.DataItem;
 import com.example.network.exception.ForbiddenException;
+import com.example.network.exception.NetError;
 import com.example.network.exception.ResourceNotFoundException;
+import com.example.network.exception.code.DomainCode;
 import com.example.network.repository.DataRepository;
 import com.example.network.service.DataService;
 import lombok.RequiredArgsConstructor;
@@ -58,7 +60,7 @@ public class DataServiceImpl implements DataService {
         }
         DataItem item = found.get();
         if (!item.getOwner().equals(owner)) {
-            throw new ForbiddenException("Bạn không có quyền với dữ liệu này");
+            throw new ForbiddenException(new NetError(DomainCode.FORBIDDEN));
         }
         return item;
     }
