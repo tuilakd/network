@@ -1,0 +1,67 @@
+package com.example.network.service.impl;
+
+import com.example.network.entity.request.DataRequest;
+import com.example.network.entity.DataItem;
+import com.example.network.exception.ForbiddenException;
+import com.example.network.exception.NetError;
+import com.example.network.exception.ResourceNotFoundException;
+import com.example.network.exception.code.DomainCode;
+import com.example.network.repository.DataRepository;
+import com.example.network.service.DataService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+
+@Service
+@RequiredArgsConstructor
+public class DataServiceImpl implements DataService {
+
+    private final DataRepository dataRepository;
+
+    @Override
+    public List<DataItem> list(String owner) {
+        return dataRepository.findByOwnerOrderByCreatedAtDesc(owner);
+    }
+
+    @Override
+    public DataItem get(Long id, String owner) {
+        return findOwned(id, owner);
+    }
+
+    @Override
+    public DataItem create(DataRequest request, String owner) {
+        DataItem item = new DataItem();
+        item.setTitle(request.getTitle());
+        item.setContent(request.getContent());
+        item.setOwner(owner);
+        return dataRepository.save(item);
+    }
+
+    @Override
+    public DataItem update(Long id, DataRequest request, String owner) {
+        DataItem item = findOwned(id, owner);
+        item.setTitle(request.getTitle());
+        item.setContent(request.getContent());
+        return dataRepository.save(item);
+    }
+
+    @Override
+    public void delete(Long id, String owner) {
+        DataItem item = findOwned(id, owner);
+        dataRepository.delete(item);
+    }
+
+    private DataItem findOwned(Long id, String owner) {
+        Optional<DataItem> found = dataRepository.findById(id);
+        if (found.isEmpty()) {
+            throw new ResourceNotFoundException(new NetError(DomainCode.RESOURCE_NOT_FOUND));
+        }
+        DataItem item = found.get();
+        if (!item.getOwner().equals(owner)) {
+            throw new ForbiddenException(new NetError(DomainCode.FORBIDDEN));
+        }
+        return item;
+    }
+}
