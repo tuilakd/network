@@ -18,8 +18,9 @@
    - [Yêu cầu môi trường](#1-yêu-cầu-môi-trường)
    - [Cấu hình cơ sở dữ liệu](#2-tạo-cơ-sở-dữ-liệu-mysql)
    - [Biến môi trường](#3-biến-môi-trường-khuyến-nghị)
-   - [Khởi chạy Backend (Spring Boot)](#4-khởi-chạy-backend-spring-boot)
-   - [Khởi chạy Desktop Client (Java Swing)](#5-khởi-chạy-desktop-client-chatwave-java-swing)
+   - [Khởi chạy nhanh bằng Script](#4-khởi-chạy-nhanh-bằng-script-khuyến-nghị-trên-windows)
+   - [Khởi chạy Backend thủ công](#5-khởi-chạy-backend-spring-boot-thủ-công)
+   - [Khởi chạy Desktop Client thủ công](#6-khởi-chạy-desktop-client-chatwave-java-swing)
 6. [Tài khoản mặc định](#tài-khoản-mặc-định)
 7. [Cấu hình gửi email OTP](#cấu-hình-gửi-email-quên-mật-khẩu)
 8. [Danh mục RESTful API](#danh-mục-restful-api)
@@ -120,6 +121,19 @@ network/
 - **IDE khuyến nghị**: IntelliJ IDEA, Eclipse hoặc NetBeans.
 
 ### 2. Tạo cơ sở dữ liệu MySQL
+
+#### Cách 1 (Khuyến nghị nhanh nhất): Dùng Docker Compose
+Dự án đã cấu hình sẵn `docker-compose.yml`. Bạn chỉ cần mở Terminal/PowerShell tại thư mục gốc và chạy:
+```bash
+docker compose up -d
+```
+Lệnh trên sẽ tự động:
+- Khởi động **MySQL 8.0** tại cổng `3306`, tự tạo database `networkdb`, user `root`, mật khẩu `admin`.
+- Khởi động giao diện quản lý **phpMyAdmin** tại [http://localhost:8081](http://localhost:8081) để xem trực quan dữ liệu trên trình duyệt.
+
+*(Để dừng container: `docker compose down`)*
+
+#### Cách 2: Dùng MySQL Server đã cài sẵn trên máy
 Mở MySQL Workbench, DBeaver hoặc Terminal chạy lệnh:
 ```sql
 CREATE DATABASE networkdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -139,7 +153,17 @@ Mặc định hệ thống sử dụng cấu hình trong `network-backend/src/ma
 
 ---
 
-### 4. Khởi chạy Backend (Spring Boot)
+### 4. Khởi chạy nhanh bằng Script (Khuyến nghị trên Windows)
+
+Dự án đã chuẩn bị sẵn các file script tự động ở thư mục gốc:
+- **`start-all.bat` (1-Click Run All)**: Tự động khởi động Database (Docker) ➜ Mở Backend Spring Boot ➜ Tự động mở Client ChatWave Swing!
+- **`start-backend.bat`**: Kiểm tra database và khởi chạy riêng Backend.
+- **`start-client.bat`**: Tự động biên dịch mã nguồn và mở Desktop Client ChatWave.
+- **`package-client.bat`**: Đóng gói ứng dụng Desktop Client thành file thực thi độc lập **`ChatWave.jar`** (chỉ cần click đúp vào file jar để mở app).
+
+---
+
+### 5. Khởi chạy Backend (Spring Boot) thủ công
 
 #### Cách 1: Chạy bằng Gradle Wrapper từ dòng lệnh
 ```powershell
@@ -159,7 +183,7 @@ Mặc định hệ thống sử dụng cấu hình trong `network-backend/src/ma
 
 ---
 
-### 5. Khởi chạy Desktop Client (ChatWave - Java Swing)
+### 6. Khởi chạy Desktop Client (ChatWave - Java Swing)
 
 #### Cách 1: Chạy từ IntelliJ IDEA
 1. Trong cửa sổ Project bên trái, duyệt đến:  
@@ -189,7 +213,7 @@ java -cp "build\classes" chatwave.Main
 
 ---
 
-### 6. Giao diện Web Client Demo (Legacy)
+### 7. Giao diện Web Client Demo (Legacy)
 Sau khi Backend khởi động, bạn có thể truy cập các trang tĩnh qua trình duyệt:
 - **Ứng dụng Web Chat**: [http://localhost:8080/index.html](http://localhost:8080/index.html)
 - **Trang Quản trị Admin**: [http://localhost:8080/admin.html](http://localhost:8080/admin.html)
