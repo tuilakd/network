@@ -14,7 +14,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LogServiceImpl implements LogService {
 
-    private static final int MAX_SIZE = 200;
+    private static final int MAX_SIZE = 1000;
 
     private final RequestLogRepository logRepository;
 

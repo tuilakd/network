@@ -15,6 +15,7 @@ public class ChatMessageResponse {
     private String attachmentUrl;
     private String attachmentType;
     private boolean isRecalled;
+    private boolean forwarded;
     private LocalDateTime recalledAt;
     private LocalDateTime sentAt;
 
@@ -24,6 +25,7 @@ public class ChatMessageResponse {
         r.roomId = m.getRoomId();
         r.sender = m.getSender();
         r.isRecalled = m.isRecalled();
+        r.forwarded = m.isForwarded();
         r.recalledAt = m.getRecalledAt();
         if (m.isRecalled()) {
             r.content = "Tin nhắn đã được thu hồi";

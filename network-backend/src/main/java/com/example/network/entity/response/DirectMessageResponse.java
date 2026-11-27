@@ -25,6 +25,7 @@ public class DirectMessageResponse {
     private String attachmentType;
     private boolean isRead;
     private boolean isRecalled;
+    private boolean forwarded;
     private LocalDateTime recalledAt;
     private LocalDateTime sentAt;
 
@@ -35,6 +36,7 @@ public class DirectMessageResponse {
         r.setRecipient(dm.getRecipient());
         r.setRead(dm.isRead());
         r.setRecalled(dm.isRecalled());
+        r.setForwarded(dm.isForwarded());
         r.setRecalledAt(dm.getRecalledAt());
         if (dm.isRecalled()) {
             r.setContent("Tin nhắn đã được thu hồi");

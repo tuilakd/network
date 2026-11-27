@@ -48,7 +48,10 @@ public class RemoteBackend implements Backend {
             o.close();
         } else if ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method) || "PATCH".equalsIgnoreCase(method)) {
             c.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+            c.setDoOutput(true);
             c.setFixedLengthStreamingMode(0);
+            OutputStream o = c.getOutputStream();
+            o.close();
         }
         return readJson(c);
     }
@@ -133,6 +136,7 @@ public class RemoteBackend implements Backend {
         x.attType = Json.str(m, "attachmentType");
         x.read = Json.bool(m, "isRead") || Json.bool(m, "read");
         x.recalled = Json.bool(m, "recalled") || Json.bool(m, "isRecalled") || Json.bool(m, "deleted");
+        x.forwarded = Json.bool(m, "forwarded") || Json.bool(m, "isForwarded");
         if (x.recalled) { x.content = ""; x.attUrl = ""; x.attType = ""; }
         x.at = time(m.get("sentAt"));
         return x;
@@ -190,6 +194,10 @@ public class RemoteBackend implements Backend {
     public void resetPassword(String email, String code, String newPassword) throws Exception {
         try { call("POST", "/api/auth/reset-password", Json.map("email", email, "code", code, "newPassword", newPassword)); }
         catch (Models.ApiException e) { throw missing(e); }
+    }
+
+    public void changePassword(String oldPassword, String newPassword) throws Exception {
+        call("POST", "/api/auth/change-password", Json.map("oldPassword", oldPassword, "newPassword", newPassword));
     }
 
     private static Models.ApiException missing(Models.ApiException e) {
@@ -269,8 +277,10 @@ public class RemoteBackend implements Backend {
     public List<Room> myRooms() throws Exception { return rooms(call("GET", "/api/rooms/mine", null)); }
     public List<Room> allRooms() throws Exception { return rooms(call("GET", "/api/rooms", null)); }
 
-    public Room createRoom(String name) throws Exception {
-        Map<String, Object> m = Json.obj(call("POST", "/api/rooms", Json.map("name", name)));
+    public Room createRoom(String name, List<String> initialMembers) throws Exception {
+        Map<String, Object> body = Json.map("name", name);
+        if (initialMembers != null && !initialMembers.isEmpty()) body.put("initialMembers", initialMembers);
+        Map<String, Object> m = Json.obj(call("POST", "/api/rooms", body));
         Room r = new Room();
         r.id = Json.num(m, "id");
         r.name = Json.str(m, "name");
@@ -294,6 +304,25 @@ public class RemoteBackend implements Backend {
         Map<String, Object> b = Json.map("content", content);
         if (url != null && !url.isEmpty()) { b.put("attachmentUrl", url); b.put("attachmentType", type); }
         return msg(Json.obj(call("POST", "/api/rooms/" + id + "/messages", b)));
+    }
+
+    public ForwardResult forwardMessage(long messageId, String sourceType, List<String> friendUsernames, List<Long> roomIds) throws Exception {
+        Map<String, Object> body = Json.map("sourceType", sourceType, "friendUsernames", friendUsernames, "roomIds", roomIds);
+        Map<String, Object> res = Json.obj(call("POST", "/api/messages/" + messageId + "/forward", body));
+        ForwardResult out = new ForwardResult();
+        out.totalRequested = (int) Json.num(res, "totalRequested");
+        out.successCount = (int) Json.num(res, "successCount");
+        out.failedCount = (int) Json.num(res, "failedCount");
+        Object arr = res.get("results");
+        if (arr != null) {
+            for (Object o : Json.arr(arr)) {
+                Map<String, Object> r = Json.obj(o);
+                if (!Json.bool(r, "success")) {
+                    out.failedDetails.add(Json.str(r, "target") + " (" + Json.str(r, "error") + ")");
+                }
+            }
+        }
+        return out;
     }
 
     // ---------------- tệp ----------------
@@ -359,8 +388,10 @@ public class RemoteBackend implements Backend {
         return profile(Json.obj(call("GET", u.equals(me) ? "/api/profile/me" : "/api/profile/" + enc(u), null)));
     }
 
-    public Profile updateMyProfile(String fullName, String bio) throws Exception {
-        return profile(Json.obj(call("PUT", "/api/profile/me", Json.map("fullName", fullName, "bio", bio))));
+    public Profile updateMyProfile(String fullName, String bio, String avatarUrl) throws Exception {
+        Map<String, Object> body = Json.map("fullName", fullName, "bio", bio);
+        if (avatarUrl != null && !avatarUrl.isEmpty()) body.put("avatarUrl", avatarUrl);
+        return profile(Json.obj(call("PUT", "/api/profile/me", body)));
     }
 
     // ---------------- quản trị ----------------

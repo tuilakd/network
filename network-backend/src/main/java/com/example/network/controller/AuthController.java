@@ -1,5 +1,6 @@
 package com.example.network.controller;
 
+import com.example.network.entity.request.ChangePasswordRequest;
 import com.example.network.entity.request.ForgotPasswordRequest;
 import com.example.network.entity.request.LoginRequest;
 import com.example.network.entity.request.RegisterRequest;
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -75,6 +77,14 @@ public class AuthController {
     public ResponseEntity<ApiMessageResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         log.info("Yêu cầu đặt lại mật khẩu với mã OTP");
         ApiMessageResponse response = passwordResetService.resetPassword(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiMessageResponse> changePassword(@Valid @RequestBody ChangePasswordRequest request,
+                                                             Authentication auth) {
+        log.info("Người dùng '{}' yêu cầu đổi mật khẩu", auth.getName());
+        ApiMessageResponse response = authService.changePassword(auth.getName(), request);
         return ResponseEntity.ok(response);
     }
 }

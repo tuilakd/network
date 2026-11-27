@@ -27,7 +27,7 @@ public class UserProfile {
     @Column(length = 100)
     private String fullName;
 
-    @Column(length = 500)
+    @Column(length = 100)
     private String bio;
 
     private String avatarUrl;

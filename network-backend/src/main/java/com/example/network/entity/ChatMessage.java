@@ -39,6 +39,11 @@ public class ChatMessage {
 
     private LocalDateTime recalledAt;
 
+    @Column(nullable = false)
+    private boolean isForwarded = false;
+
+    private Long forwardedFromMessageId;
+
     private LocalDateTime sentAt;
 
     @PrePersist

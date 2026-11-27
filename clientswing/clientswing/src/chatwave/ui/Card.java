@@ -1,5 +1,6 @@
 package chatwave.ui;
 
+import java.awt.AlphaComposite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
@@ -31,8 +32,14 @@ public class Card extends JPanel {
         int m = shadow ? 14 : 0;
         float w = getWidth() - m * 2, h = getHeight() - m * 2;
         if (shadow) Gfx.shadow(g, m, m, w, h, radius, 12, 4);
+
+        // Ghi đè hoàn toàn pixel cũ bên trong lòng thẻ để tránh bóng ma khi số liệu chạy hiệu ứng
+        g.setComposite(AlphaComposite.Src);
         g.setColor(sheet ? Theme.side() : Theme.surface());
         g.fill(Gfx.rr(m, m, w, h, radius));
+
+        // Chuyển về SrcOver để viền bo góc hòa mượt với bóng đổ
+        g.setComposite(AlphaComposite.SrcOver);
         g.setColor(Theme.border());
         g.draw(Gfx.rr(m + 0.5f, m + 0.5f, w - 1, h - 1, radius));
         g.dispose();

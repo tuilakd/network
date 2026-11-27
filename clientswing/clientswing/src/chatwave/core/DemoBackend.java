@@ -185,6 +185,12 @@ public class DemoBackend implements Backend {
         sentCode = "";
     }
 
+    public void changePassword(String oldPassword, String newPassword) throws Exception {
+        lag();
+        if (oldPassword == null || oldPassword.isEmpty()) throw new ApiException(400, "Mật khẩu hiện tại không được để trống");
+        if (newPassword == null || newPassword.length() < 6) throw new ApiException(400, "Mật khẩu mới tối thiểu 6 ký tự");
+    }
+
     public List<Friend> friends() {
         List<Friend> out = new ArrayList<Friend>();
         for (String f : friends) {
@@ -303,6 +309,16 @@ public class DemoBackend implements Backend {
         throw new ApiException(404, "Không tìm thấy tin nhắn");
     }
 
+    public ForwardResult forwardMessage(long messageId, String sourceType, List<String> friendUsernames, List<Long> roomIds) throws Exception {
+        lag();
+        ForwardResult fr = new ForwardResult();
+        int f = friendUsernames == null ? 0 : friendUsernames.size();
+        int r = roomIds == null ? 0 : roomIds.size();
+        fr.totalRequested = f + r;
+        fr.successCount = fr.totalRequested;
+        return fr;
+    }
+
     public void recallRoom(long roomId, long id) throws ApiException {
         lag();
         List<Msg> l = roomMsgs.get(roomId);
@@ -326,7 +342,7 @@ public class DemoBackend implements Backend {
 
     public List<Room> allRooms() { return new ArrayList<Room>(rooms); }
 
-    public Room createRoom(String name) throws Exception {
+    public Room createRoom(String name, List<String> initialMembers) throws Exception {
         lag();
         Room r = new Room();
         r.id = rooms.size() + 1;
@@ -392,10 +408,11 @@ public class DemoBackend implements Backend {
         return p;
     }
 
-    public Profile updateMyProfile(String fullName, String bio) {
+    public Profile updateMyProfile(String fullName, String bio, String avatarUrl) {
         Profile p = profile(me);
         p.fullName = fullName;
         p.bio = bio;
+        if (avatarUrl != null && !avatarUrl.isEmpty()) p.avatarUrl = avatarUrl;
         return p;
     }
 

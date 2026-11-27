@@ -1,5 +1,7 @@
 package com.example.network.service.impl;
 
+import com.example.network.entity.request.ChangePasswordRequest;
+import com.example.network.entity.response.ApiMessageResponse;
 import com.example.network.entity.response.AuthResponse;
 import com.example.network.entity.request.LoginRequest;
 import com.example.network.entity.request.RegisterRequest;
@@ -59,5 +61,20 @@ public class AuthServiceImpl implements AuthService {
         }
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole());
         return new AuthResponse(token, user.getUsername(), user.getRole());
+    }
+
+    @Override
+    public ApiMessageResponse changePassword(String username, ChangePasswordRequest request) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(DomainCode.USER_NOT_FOUND));
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new AppException(DomainCode.INVALID_CREDENTIALS, "Mật khẩu hiện tại không đúng");
+        }
+        if (request.getOldPassword().equals(request.getNewPassword())) {
+            throw new AppException(DomainCode.INVALID_INPUT, "Mật khẩu mới không được trùng mật khẩu hiện tại");
+        }
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        return new ApiMessageResponse("Đổi mật khẩu thành công");
     }
 }

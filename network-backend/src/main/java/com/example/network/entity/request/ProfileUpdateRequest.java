@@ -14,7 +14,7 @@ public class ProfileUpdateRequest {
     @Size(max = 100, message = "Họ và tên tối đa 100 ký tự")
     private String fullName;
 
-    @Size(max = 500, message = "Tiểu sử tối đa 500 ký tự")
+    @Size(max = 100, message = "Giới thiệu tối đa 100 ký tự")
     private String bio;
 
     private String avatarUrl;

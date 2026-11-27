@@ -35,7 +35,7 @@ public class MessageList extends JComponent implements Scrollable {
     public interface RecallListener { void recall(Msg m); }
 
     private static final class Item {
-        Msg m; String day; boolean mine, groupStart, groupEnd, showName, showAvatar, lastMine;
+        Msg m; String day; boolean mine, groupStart, groupEnd, showName, showAvatar, lastMine, emojiOnly;
         List<String> lines = new ArrayList<String>();
         int x, y, w, h, bubbleW, bubbleH, imgW, imgH, textH, metaH; long born; String time;
     }
@@ -188,21 +188,105 @@ public class MessageList extends JComponent implements Scrollable {
 
     private FontMetrics fm(Font f) { return getFontMetrics(f); }
 
-    private void wrap(Item it, int maxTextW) {
+    private static boolean isEmojiCodePoint(int cp) {
+        return (cp >= 0x1F300 && cp <= 0x1FAFF)
+                || (cp >= 0x2600 && cp <= 0x27BF)
+                || (cp >= 0x2300 && cp <= 0x23FF)
+                || (cp >= 0x1F000 && cp <= 0x1F02F)
+                || (cp >= 0x1F0A0 && cp <= 0x1F0FF)
+                || (cp >= 0x1F100 && cp <= 0x1F1FF);
+    }
+
+    private static boolean isEmojiOnly1To3(Msg m) {
+        if (m == null || m.recalled || m.isImage() || m.isMedia() || (m.attUrl != null && !m.attUrl.isEmpty())) return false;
+        String s = m.content == null ? "" : m.content.trim();
+        if (s.isEmpty()) return false;
+        List<EmojiParser.Segment> segs = EmojiParser.parse(s);
+        int count = 0;
+        for (EmojiParser.Segment seg : segs) {
+            if (seg.emoji) {
+                count++;
+                if (count > 3) return false;
+            } else if (!seg.text.trim().isEmpty()) {
+                return false;
+            }
+        }
+        return count >= 1 && count <= 3;
+    }
+
+    private int measureRichText(String s, Font base) {
+        if (s == null || s.isEmpty()) return 0;
+        int emojiPx = Math.round(base.getSize2D() >= 26f ? 36f : 20f);
+        FontMetrics bf = fm(base);
+        Font ef = Theme.emojiFont(base.getSize2D());
+        FontMetrics efmt = fm(ef);
+        int w = 0;
+        for (EmojiParser.Segment seg : EmojiParser.parse(s)) {
+            if (seg.emoji) {
+                w += emojiPx + 2;
+            } else {
+                for (int i = 0; i < seg.text.length(); ) {
+                    int cp = seg.text.codePointAt(i);
+                    int n = Character.charCount(cp);
+                    String ch = seg.text.substring(i, i + n);
+                    w += (base.canDisplay(cp) ? bf : efmt).stringWidth(ch);
+                    i += n;
+                }
+            }
+        }
+        return w;
+    }
+
+    private void drawRichText(Graphics2D g, String s, Font base, int x, int y) {
+        if (s == null || s.isEmpty()) return;
+        int emojiPx = Math.round(base.getSize2D() >= 26f ? 36f : 20f);
+        FontMetrics bf = fm(base);
+        Font ef = Theme.emojiFont(base.getSize2D());
+        FontMetrics efmt = fm(ef);
+        int cx = x;
+        for (EmojiParser.Segment seg : EmojiParser.parse(s)) {
+            if (seg.emoji) {
+                BufferedImage img = EmojiRegistry.image(seg.hex, emojiPx, new Runnable() {
+                    public void run() { repaint(); }
+                });
+                if (img != null) {
+                    int iy = y - bf.getAscent() + (bf.getHeight() - emojiPx) / 2;
+                    g.drawImage(img, cx + 1, iy, emojiPx, emojiPx, null);
+                } else {
+                    g.setFont(ef);
+                    g.drawString(seg.text, cx, y);
+                }
+                cx += emojiPx + 2;
+            } else {
+                for (int i = 0; i < seg.text.length(); ) {
+                    int cp = seg.text.codePointAt(i);
+                    int n = Character.charCount(cp);
+                    String ch = seg.text.substring(i, i + n);
+                    boolean ok = base.canDisplay(cp);
+                    g.setFont(ok ? base : ef);
+                    g.drawString(ch, cx, y);
+                    cx += (ok ? bf : efmt).stringWidth(ch);
+                    i += n;
+                }
+            }
+        }
+        g.setFont(base);
+    }
+
+    private void wrap(Item it, int maxTextW, Font font) {
         it.lines.clear();
-        FontMetrics f = fm(textFont);
         String text = it.m.recalled ? RECALLED : (it.m.content == null ? "" : it.m.content);
         for (String para : text.split("\n", -1)) {
             if (para.isEmpty()) { it.lines.add(""); continue; }
             StringBuilder line = new StringBuilder();
             for (String word : para.split(" ", -1)) {
                 String trial = line.length() == 0 ? word : line + " " + word;
-                if (f.stringWidth(trial) <= maxTextW) { line = new StringBuilder(trial); continue; }
+                if (measureRichText(trial, font) <= maxTextW) { line = new StringBuilder(trial); continue; }
                 if (line.length() > 0) { it.lines.add(line.toString()); line = new StringBuilder(); }
                 String w = word;
-                while (f.stringWidth(w) > maxTextW) {
+                while (measureRichText(w, font) > maxTextW && w.length() > 1) {
                     int n = w.length();
-                    while (n > 1 && f.stringWidth(w.substring(0, n)) > maxTextW) n--;
+                    while (n > 1 && measureRichText(w.substring(0, n), font) > maxTextW) n--;
                     it.lines.add(w.substring(0, n));
                     w = w.substring(n);
                 }
@@ -219,15 +303,18 @@ public class MessageList extends JComponent implements Scrollable {
         int avSpace = AV + 8;
         int maxBub = Math.min(MAXB, (int) ((W - PAD * 2 - avSpace) * 0.78));
         int y = 16;
-        FontMetrics tf = fm(textFont);
-        int lh = tf.getHeight() + 2;
+        Font bigEmojiFont = Theme.emojiFont(28f);
         for (Item it : items) {
             if (it.m == null) { it.h = 34; it.y = y; y += it.h + 4; continue; }
             Msg m = it.m;
+            it.emojiOnly = isEmojiOnly1To3(m);
+            Font activeFont = it.emojiOnly ? bigEmojiFont : textFont;
+            FontMetrics tf = fm(activeFont);
+            int lh = tf.getHeight() + 2;
             boolean hasText = m.recalled || (m.content != null && !m.content.trim().isEmpty());
-            wrap(it, maxBub - PX * 2);
+            wrap(it, maxBub - PX * 2, activeFont);
             int tw = 0;
-            for (String l : it.lines) tw = Math.max(tw, tf.stringWidth(l));
+            for (String l : it.lines) tw = Math.max(tw, measureRichText(l, activeFont));
             if (m.recalled) tw += 10;
             it.imgW = 0; it.imgH = 0;
             if (m.isImage()) {
@@ -236,10 +323,14 @@ public class MessageList extends JComponent implements Scrollable {
                 else { it.imgW = 240; it.imgH = ImageCache.failed(m.attUrl) ? 70 : 160; }
             }
             if (m.isMedia()) { it.imgW = 250; it.imgH = 62; }
-            it.textH = hasText ? it.lines.size() * lh + PY * 2 - 2 : 0;
-            int cw = Math.max(hasText ? tw + PX * 2 : 0, it.imgW);
-            it.bubbleW = Math.max(cw, 46);
-            it.bubbleH = (it.imgH > 0 ? it.imgH : 0) + it.textH;
+            int padX = it.emojiOnly ? 4 : PX;
+            int padY = it.emojiOnly ? 6 : PY;
+            int fwdH = (!m.recalled && m.forwarded) ? 16 : 0;
+            it.textH = hasText ? it.lines.size() * Math.max(lh, it.emojiOnly ? 40 : 22) + padY * 2 - 2 : 0;
+            int cw = Math.max(hasText ? tw + padX * 2 : 0, it.imgW);
+            if (fwdH > 0) cw = Math.max(cw, 130);
+            it.bubbleW = Math.max(cw, it.emojiOnly ? 40 : 46);
+            it.bubbleH = fwdH + (it.imgH > 0 ? it.imgH : 0) + it.textH;
             if (it.bubbleH == 0) it.bubbleH = 36;
             it.y = y + (it.groupStart ? 10 : 0);
             int top = it.y;
@@ -337,7 +428,7 @@ public class MessageList extends JComponent implements Scrollable {
             gd.setStroke(new java.awt.BasicStroke(1.2f, java.awt.BasicStroke.CAP_BUTT, java.awt.BasicStroke.JOIN_ROUND, 1f, new float[]{4f, 3f}, 0f));
             gd.draw(shape);
             gd.dispose();
-        } else {
+        } else if (!it.emojiOnly) {
             if (!it.mine) { g.setColor(Theme.shadow()); g.translate(0, 1); g.fill(shape); g.translate(0, -1); }
             if (fill1.equals(fill2)) g.setColor(fill1); else g.setPaint(new GradientPaint(it.x, by, fill1, it.x, by + it.bubbleH, fill2));
             g.fill(shape);
@@ -359,34 +450,45 @@ public class MessageList extends JComponent implements Scrollable {
 
         // ảnh
         int ty = by;
+        if (!m.recalled && m.forwarded) {
+            Color fc = it.emojiOnly ? Theme.muted() : (it.mine ? Theme.alpha(Theme.onAccent(), 210) : Theme.muted());
+            Icons.FORWARD.paint(g, it.x + 10, ty + 4, 12, fc);
+            g.setFont(Theme.font(Font.ITALIC, 11f));
+            g.setColor(fc);
+            g.drawString("Đã chuyển tiếp", it.x + 25, ty + 14);
+            ty += 16;
+        }
         if (m.isImage()) {
             BufferedImage th = ImageCache.thumb(m.attUrl, 280, 240, new Runnable() { public void run() { relayout(); revalidate(); repaint(); } });
             Graphics2D gc = (Graphics2D) g.create();
             gc.clip(shape);
             if (th != null) {
-                gc.drawImage(th, it.x, by, it.imgW, it.imgH, null);
-                if (it == hoverImage) { gc.setColor(new Color(255, 255, 255, 36)); gc.fillRect(it.x, by, it.imgW, it.imgH); }
+                gc.drawImage(th, it.x, ty, it.imgW, it.imgH, null);
+                if (it == hoverImage) { gc.setColor(new Color(255, 255, 255, 36)); gc.fillRect(it.x, ty, it.imgW, it.imgH); }
             } else {
                 gc.setColor(Theme.surface2());
-                gc.fillRect(it.x, by, it.imgW, it.imgH);
+                gc.fillRect(it.x, ty, it.imgW, it.imgH);
                 gc.setColor(Theme.muted());
                 gc.setFont(Theme.small());
                 String s = ImageCache.failed(m.attUrl) ? "Không tải được ảnh" : "Đang tải ảnh…";
-                gc.drawString(s, it.x + (it.imgW - gc.getFontMetrics().stringWidth(s)) / 2, by + it.imgH / 2 + 4);
+                gc.drawString(s, it.x + (it.imgW - gc.getFontMetrics().stringWidth(s)) / 2, ty + it.imgH / 2 + 4);
             }
             gc.dispose();
             ty += it.imgH;
         }
-        if (m.isMedia()) { paintMedia(g, it, by); ty += it.imgH; }
+        if (m.isMedia()) { paintMedia(g, it, ty); ty += it.imgH; }
 
         // chữ
         if (!it.lines.isEmpty() && it.textH > 0) {
-            g.setFont(m.recalled ? textFont.deriveFont(Font.ITALIC) : textFont);
+            Font activeFont = it.emojiOnly ? Theme.emojiFont(28f) : (m.recalled ? textFont.deriveFont(Font.ITALIC) : textFont);
+            g.setFont(activeFont);
             FontMetrics f = g.getFontMetrics();
-            g.setColor(m.recalled ? Theme.muted() : it.mine ? Theme.onAccent() : Theme.text());
-            int lh = f.getHeight() + 2;
-            int y = ty + PY - 1 + f.getAscent();
-            for (String l : it.lines) { g.drawString(l, it.x + PX, y); y += lh; }
+            g.setColor(m.recalled ? Theme.muted() : it.emojiOnly ? Theme.text() : it.mine ? Theme.onAccent() : Theme.text());
+            int lh = Math.max(f.getHeight() + 2, it.emojiOnly ? 40 : 22);
+            int padX = it.emojiOnly ? 4 : PX;
+            int padY = it.emojiOnly ? 6 : PY;
+            int y = ty + padY - 1 + f.getAscent();
+            for (String l : it.lines) { drawRichText(g, l, activeFont, it.x + padX, y); y += lh; }
         }
 
         // giờ + trạng thái

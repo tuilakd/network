@@ -30,6 +30,10 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+if exist "clientswing\clientswing\src\resources" (
+    xcopy /E /I /Y "clientswing\clientswing\src\resources" "clientswing\clientswing\build\classes\resources" >nul
+)
+
 :: 3. Khoi chay ung dung
 echo [2/2] Dang mo ung dung ChatWave...
 echo.

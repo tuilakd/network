@@ -1,5 +1,7 @@
 package com.example.network.service;
 
+import com.example.network.entity.request.ChangePasswordRequest;
+import com.example.network.entity.response.ApiMessageResponse;
 import com.example.network.entity.response.AuthResponse;
 import com.example.network.entity.request.LoginRequest;
 import com.example.network.entity.request.RegisterRequest;
@@ -10,4 +12,6 @@ public interface AuthService {
     UserResponse register(RegisterRequest request);
 
     AuthResponse login(LoginRequest request);
+
+    ApiMessageResponse changePassword(String username, ChangePasswordRequest request);
 }

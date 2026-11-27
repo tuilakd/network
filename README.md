@@ -331,3 +331,9 @@ Tất cả các API nghiệp vụ đều có tiền tố `/api`. Trừ các endp
    - `RequestLoggingFilter` tự động chặn mọi request để ghi nhận IP, URI, Phương thức, Trạng thái HTTP, Thời gian phản hồi tính theo millisecond vào bảng `request_logs`.
    - Lỗi ngoại lệ nghiệp vụ và lỗi hệ thống được `GlobalExceptionHandler` bắt tập trung và ghi vào bảng `error_logs`.
    - Tác vụ định kỳ `RequestLogCleanup` tự động quét và loại bỏ dữ liệu log cũ hơn 30 ngày để tiết kiệm dung lượng lưu trữ.
+
+
+---
+
+## Giấy phép tài nguyên bên thứ ba (Emoji)
+- Bộ ảnh emoji màu sử dụng **Twemoji** (PNG 72x72) từ Twitter (`https://github.com/twitter/twemoji`), phát hành theo giấy phép **CC-BY 4.0** (https://creativecommons.org/licenses/by/4.0/).

@@ -63,6 +63,7 @@ public final class Theme {
     public static Color alpha(Color c, int a) { return new Color(c.getRed(), c.getGreen(), c.getBlue(), Math.max(0, Math.min(255, a))); }
 
     private static String family;
+    private static String emojiFamily;
     private static final Map<String, Font> CACHE = new HashMap<String, Font>();
 
     private static String family() {
@@ -76,10 +77,28 @@ public final class Theme {
         return family;
     }
 
+    private static String emojiFamily() {
+        if (emojiFamily == null) {
+            emojiFamily = Font.DIALOG;
+            String[] want = {"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Segoe UI Symbol"};
+            String[] have = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+            outer:
+            for (String w : want) for (String h : have) if (h.equalsIgnoreCase(w)) { emojiFamily = h; break outer; }
+        }
+        return emojiFamily;
+    }
+
     public static Font font(int style, float size) {
         String k = style + ":" + size;
         Font f = CACHE.get(k);
         if (f == null) { f = new Font(family(), style, 12).deriveFont(size); CACHE.put(k, f); }
+        return f;
+    }
+
+    public static Font emojiFont(float size) {
+        String k = "emoji:" + size;
+        Font f = CACHE.get(k);
+        if (f == null) { f = new Font(emojiFamily(), Font.PLAIN, 12).deriveFont(size); CACHE.put(k, f); }
         return f;
     }
 

@@ -79,7 +79,7 @@ public class ErrorLogServiceImpl implements ErrorLogService {
     @Override
     public Page<ErrorLog> getLogs(Integer status, String userId, LocalDateTime fromTime, LocalDateTime toTime, int page, int size) {
         int pageNumber = Math.max(page, 0);
-        int pageSize = Math.min(Math.max(size, 1), 100);
+        int pageSize = Math.min(Math.max(size, 1), 500);
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
 
         String trimmedUser = (userId != null && !userId.isBlank()) ? userId.trim() : null;

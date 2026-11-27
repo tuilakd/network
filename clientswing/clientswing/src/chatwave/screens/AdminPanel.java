@@ -112,7 +112,7 @@ public class AdminPanel extends Bg {
         Async.run(new java.util.concurrent.Callable<Object[]>() {
             public Object[] call() throws Exception {
                 Backend b = Session.backend;
-                return new Object[]{b.adminUsers(), b.requestLogs(100), b.errorLogs(100)};
+                return new Object[]{b.adminUsers(), b.requestLogs(500), b.errorLogs(500)};
             }
         }, new Async.Ok<Object[]>() {
             @SuppressWarnings("unchecked") public void accept(Object[] d) {
@@ -175,66 +175,62 @@ public class AdminPanel extends Bg {
 
     /**
      * Thẻ thống kê có số đếm chạy lên.
-     * Phần tĩnh (bóng, nền, icon, nhãn) được cache thành ảnh; mỗi frame chỉ vẽ lại con số.
+     * Vẽ trực tiếp bằng Graphics2D sắc nét, dùng AlphaComposite.Src để làm sạch lòng thẻ,
+     * tránh hiện tượng bóng ma và lem viền khi số liệu chạy hiệu ứng.
      */
     private static final class Stat extends JComponent {
         private final String label; private final Icons icon;
         private float shown; private int target;
+        private Anim.Tween anim;
+        private static final java.text.NumberFormat NUM_FMT = java.text.NumberFormat.getIntegerInstance();
 
-        private BufferedImage cache;
-        private int cPW = -1, cPH = -1;
-        private double cScale = -1;
-        private boolean cDark;
-
-        Stat(String label, Icons icon) { this.label = label; this.icon = icon; }
-
-        void set(int n) {
-            final float from = shown; target = n;
-            Anim.run(700, new Anim.Update() {
-                public void apply(float t) {
-                    shown = from + (target - from) * Anim.easeOut(t);
-                    // chỉ vẽ lại vùng chứa con số, không vẽ lại cả thẻ + bóng
-                    int h = getHeight() - 6;
-                    repaint(78, Math.max(0, h / 2 - 34), Math.max(1, getWidth() - 78), 46);
-                }
-            });
+        Stat(String label, Icons icon) {
+            this.label = label;
+            this.icon = icon;
+            setOpaque(false);
         }
 
-        private void buildCache(int w, int fullH, double sc) {
-            int pw = (int) Math.ceil(w * sc), ph = (int) Math.ceil(fullH * sc);
-            cPW = pw; cPH = ph; cScale = sc; cDark = Theme.dark;
-            cache = new BufferedImage(pw, ph, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g = Gfx.g2(cache.createGraphics());
-            g.scale(sc, sc);
-            int h = fullH - 6;
-            Gfx.shadow(g, 0, 0, w, h, 16, 10, 4);
-            g.setColor(Theme.surface());
-            g.fill(Gfx.rr(0, 0, w, h, 16));
-            g.setColor(Theme.accentSoft());
-            g.fill(Gfx.rr(18, (h - 48) / 2f, 48, 48, 14));
-            icon.paint(g, 30, (h - 24) / 2f, 24, Theme.accent());
-            g.setFont(Theme.font(Font.PLAIN, 13f));
-            g.setColor(Theme.muted());
-            g.drawString(label, 82, h / 2 - 8);
-            g.dispose();
+        void set(int n) {
+            if (anim != null) anim.cancel();
+            final float from = shown; target = n;
+            anim = Anim.run(700, new Anim.Update() {
+                public void apply(float t) {
+                    shown = from + (target - from) * Anim.easeOut(t);
+                    repaint();
+                }
+            });
         }
 
         @Override protected void paintComponent(Graphics g0) {
             int w = getWidth(), fullH = getHeight();
             if (w <= 0 || fullH <= 6) return;
             Graphics2D g = Gfx.g2(g0);
-            double sc = g.getTransform().getScaleX();
-            if (sc <= 0) sc = 1;
-            int pw = (int) Math.ceil(w * sc), ph = (int) Math.ceil(fullH * sc);
-            if (cache == null || cPW != pw || cPH != ph || cScale != sc || cDark != Theme.dark) {
-                buildCache(w, fullH, sc);
-            }
-            g.drawImage(cache, 0, 0, w, fullH, null);
-
             int h = fullH - 6;
+
+            // Nền thẻ bo góc
+            g.setColor(Theme.surface());
+            g.fill(Gfx.rr(0, 0, w, h, 16));
+
+            // Viền nhẹ
+            g.setColor(Theme.border());
+            g.draw(Gfx.rr(0.5f, 0.5f, w - 1, h - 1, 16));
+
+            // Nền icon và icon
+            g.setColor(Theme.accentSoft());
+            g.fill(Gfx.rr(18, (h - 48) / 2f, 48, 48, 14));
+            icon.paint(g, 30, (h - 24) / 2f, 24, Theme.accent());
+
+            // Nhãn tiêu đề
+            g.setFont(Theme.font(Font.PLAIN, 13f));
+            g.setColor(Theme.muted());
+            g.drawString(label, 82, h / 2 - 8);
+
+            // Con số thống kê
             g.setFont(Theme.font(Font.BOLD, 28f));
             g.setColor(Theme.text());
-            g.drawString(String.valueOf(Math.round(shown)), 82, h / 2 + 26);
+            String numStr = NUM_FMT.format(Math.round(shown));
+            g.drawString(numStr, 82, h / 2 + 26);
+
             g.dispose();
         }
     }

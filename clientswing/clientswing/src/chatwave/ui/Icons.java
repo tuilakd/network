@@ -11,7 +11,7 @@ import java.awt.geom.RoundRectangle2D;
 
 /** Biểu tượng vẽ bằng Java2D (không cần ảnh, luôn nét ở mọi độ phân giải). */
 public enum Icons {
-    SEND, IMAGE, SEARCH, CLOSE, MOON, SUN, INFO, PLUS, CHECK, LOGOUT, BACK, USER, CHAT, GROUP, TRASH, SHIELD, MAIL, LOCK, EYE, SETTINGS, SHIELDUSER, MIC, PLAY, PAUSE, STOP, FILM;
+    SEND, IMAGE, SEARCH, CLOSE, MOON, SUN, INFO, PLUS, CHECK, LOGOUT, BACK, USER, CHAT, GROUP, TRASH, SHIELD, MAIL, LOCK, EYE, SETTINGS, SHIELDUSER, MIC, PLAY, PAUSE, STOP, FILM, SMILE, USER_PLUS, USERS_PLUS, FORWARD, COPY;
 
     public void paint(Graphics2D g0, float x, float y, float s, Color col) {
         Graphics2D g = (Graphics2D) g0.create();
@@ -180,6 +180,36 @@ public enum Icons {
                 Path2D f = new Path2D.Float();
                 f.moveTo(10, 9); f.lineTo(15, 12); f.lineTo(10, 15); f.closePath();
                 g.fill(f);
+                break;
+            case SMILE:
+                g.draw(new Ellipse2D.Float(3, 3, 18, 18));
+                g.fill(new Ellipse2D.Float(8, 8.5f, 2.2f, 2.2f));
+                g.fill(new Ellipse2D.Float(13.8f, 8.5f, 2.2f, 2.2f));
+                g.draw(new Arc2D.Float(7, 9, 10, 8, 200, 140, Arc2D.OPEN));
+                break;
+            case USER_PLUS:
+                g.draw(new Ellipse2D.Float(6, 4, 7, 7));
+                g.draw(new Arc2D.Float(2.5f, 13.5f, 14, 12, 0, 180, Arc2D.OPEN));
+                g.draw(new Line2D.Float(18.5f, 8, 18.5f, 14));
+                g.draw(new Line2D.Float(15.5f, 11, 21.5f, 11));
+                break;
+            case USERS_PLUS:
+                g.draw(new Ellipse2D.Float(5, 4.5f, 6.5f, 6.5f));
+                g.draw(new Arc2D.Float(2, 13.5f, 12.5f, 11, 0, 180, Arc2D.OPEN));
+                g.draw(new Ellipse2D.Float(13, 5.5f, 5, 5));
+                g.draw(new Line2D.Float(19, 12.5f, 19, 18.5f));
+                g.draw(new Line2D.Float(16, 15.5f, 22, 15.5f));
+                break;
+            case FORWARD: {
+                Path2D p = new Path2D.Float();
+                p.moveTo(14, 5); p.lineTo(20, 10.5f); p.lineTo(14, 16);
+                g.draw(p);
+                g.draw(new Arc2D.Float(4, 10.5f, 16, 13, 180, -90, Arc2D.OPEN));
+                break;
+            }
+            case COPY:
+                g.draw(new RoundRectangle2D.Float(8, 8, 12, 12, 3, 3));
+                g.draw(new RoundRectangle2D.Float(4, 4, 12, 12, 3, 3));
                 break;
             default:
         }

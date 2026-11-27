@@ -43,6 +43,11 @@ public class DirectMessage {
     @Column(nullable = false)
     private boolean isRecalled = false;
 
+    @Column(nullable = false)
+    private boolean isForwarded = false;
+
+    private Long forwardedFromMessageId;
+
     private LocalDateTime recalledAt;
 
     @Column(nullable = false)

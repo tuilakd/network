@@ -1,6 +1,5 @@
 package chatwave.ui;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -10,6 +9,7 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+import javax.swing.JViewport;
 import javax.swing.plaf.basic.BasicScrollBarUI;
 
 /** Thanh cuộn mỏng, bo tròn, chỉ đậm lên khi rê chuột (như Windows 11). */
@@ -21,10 +21,17 @@ public final class ModernScroll {
         sp.setBorder(BorderFactory.createEmptyBorder());
         sp.setOpaque(false);
         sp.getViewport().setOpaque(false);
-        sp.getVerticalScrollBar().setUnitIncrement(24);
-        sp.getVerticalScrollBar().setUI(new Ui());
-        sp.getVerticalScrollBar().setPreferredSize(new Dimension(10, 10));
-        sp.getVerticalScrollBar().setOpaque(false);
+        sp.getViewport().setScrollMode(JViewport.SIMPLE_SCROLL_MODE);
+
+        JScrollBar vsb = new JScrollBar(JScrollBar.VERTICAL) {
+            @Override public void updateUI() {
+                setUI(new Ui());
+            }
+        };
+        vsb.setUnitIncrement(24);
+        vsb.setPreferredSize(new Dimension(10, 10));
+        vsb.setOpaque(false);
+        sp.setVerticalScrollBar(vsb);
         return sp;
     }
 

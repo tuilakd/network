@@ -39,6 +39,8 @@ public class ItemList extends JComponent implements Scrollable {
     private String selectedId;
     private Listener listener;
     private String empty = "";
+    private Btn emptyBtn;
+    private boolean hoverEmptyBtn;
     private float intro = 1f;
     private static final int ROW_H = 66, ROW_H_BTN = 74, HEAD_H = 34;
 
@@ -55,6 +57,7 @@ public class ItemList extends JComponent implements Scrollable {
 
     public void setListener(Listener l) { listener = l; }
     public void setEmptyText(String s) { empty = s; repaint(); }
+    public void setEmptyButton(Btn b) { emptyBtn = b; hoverEmptyBtn = false; repaint(); }
     public void setSelectedId(String id) { selectedId = id; repaint(); }
     public String getSelectedId() { return selectedId; }
 
@@ -89,6 +92,15 @@ public class ItemList extends JComponent implements Scrollable {
     }
 
     private void updateHover(MouseEvent e) {
+        if (rows.isEmpty()) {
+            boolean heb = emptyBtn != null && emptyBtn.r.contains(e.getPoint());
+            if (heb != hoverEmptyBtn) {
+                hoverEmptyBtn = heb;
+                setCursor(heb ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR) : Cursor.getDefaultCursor());
+                repaint();
+            }
+            return;
+        }
         int i = rowAt(e.getY());
         int hb = -1;
         if (i >= 0 && !rows.get(i).header) {
@@ -105,6 +117,12 @@ public class ItemList extends JComponent implements Scrollable {
     }
 
     private void click(MouseEvent e) {
+        if (rows.isEmpty()) {
+            if (emptyBtn != null && emptyBtn.r.contains(e.getPoint()) && emptyBtn.action != null) {
+                emptyBtn.action.run();
+            }
+            return;
+        }
         int i = rowAt(e.getY());
         if (i < 0) return;
         Row r = rows.get(i);
@@ -131,6 +149,18 @@ public class ItemList extends JComponent implements Scrollable {
             String[] lines = empty.split("\n");
             int y = 60;
             for (String l : lines) { g.drawString(l, (w - fm.stringWidth(l)) / 2, y); y += fm.getHeight() + 2; }
+            if (emptyBtn != null) {
+                g.setFont(Theme.font(java.awt.Font.BOLD, 13f));
+                FontMetrics bfm = g.getFontMetrics();
+                int bw = bfm.stringWidth(emptyBtn.label) + 32, bh = 36;
+                int bx = (w - bw) / 2, by = y + 12;
+                emptyBtn.r.setBounds(bx, by, bw, bh);
+                g.setColor(hoverEmptyBtn ? Theme.accentDark() : Theme.accent());
+                g.fill(Gfx.rr(bx, by, bw, bh, 10));
+                g.setColor(Theme.onAccent());
+                g.drawString(emptyBtn.label, bx + (bw - bfm.stringWidth(emptyBtn.label)) / 2f,
+                        by + (bh - bfm.getHeight()) / 2f + bfm.getAscent());
+            }
             g.dispose();
             return;
         }

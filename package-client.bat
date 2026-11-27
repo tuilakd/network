@@ -21,6 +21,10 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+if exist "clientswing\clientswing\src\resources" (
+    xcopy /E /I /Y "clientswing\clientswing\src\resources" "clientswing\clientswing\build\classes\resources" >nul
+)
+
 echo [2/2] Dang dong goi file ChatWave.jar...
 jar --create --file ChatWave.jar --main-class chatwave.Main -C clientswing\clientswing\build\classes .
 

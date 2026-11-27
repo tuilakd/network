@@ -16,6 +16,7 @@ public interface Backend {
     /** Quên mật khẩu: backend gửi mã xác nhận tới email. */
     void forgotPassword(String email) throws Exception;
     void resetPassword(String email, String code, String newPassword) throws Exception;
+    void changePassword(String oldPassword, String newPassword) throws Exception;
 
     List<Friend> friends() throws Exception;
     List<Req> pendingRequests() throws Exception;
@@ -31,10 +32,11 @@ public interface Backend {
     void recallDm(long messageId) throws Exception;
     /** Thu hồi tin nhắn trong nhóm do chính mình gửi. */
     void recallRoom(long roomId, long messageId) throws Exception;
+    ForwardResult forwardMessage(long messageId, String sourceType, List<String> friendUsernames, List<Long> roomIds) throws Exception;
 
     List<Room> myRooms() throws Exception;
     List<Room> allRooms() throws Exception;
-    Room createRoom(String name) throws Exception;
+    Room createRoom(String name, List<String> initialMembers) throws Exception;
     void joinRoom(long roomId) throws Exception;
     List<String> roomMembers(long roomId) throws Exception;
     List<Msg> roomHistory(long roomId) throws Exception;
@@ -44,7 +46,7 @@ public interface Backend {
     byte[] download(String url) throws Exception;
 
     Profile profile(String username) throws Exception;
-    Profile updateMyProfile(String fullName, String bio) throws Exception;
+    Profile updateMyProfile(String fullName, String bio, String avatarUrl) throws Exception;
 
     // ----- quản trị (ROLE_ADMIN) -----
     List<AdminUser> adminUsers() throws Exception;

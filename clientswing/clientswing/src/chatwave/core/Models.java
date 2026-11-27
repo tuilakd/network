@@ -49,7 +49,7 @@ public final class Models {
     public static class Msg {
         public long id;
         public String sender = "", content = "", attUrl = "", attType = "";
-        public boolean read, recalled;
+        public boolean read, recalled, forwarded;
         public long at;
         public boolean isImage() { return !recalled && attUrl != null && !attUrl.isEmpty() && "IMAGE".equalsIgnoreCase(attType); }
         public boolean isAudio() { return !recalled && attUrl != null && !attUrl.isEmpty() && "AUDIO".equalsIgnoreCase(attType); }
@@ -82,6 +82,11 @@ public final class Models {
         public long at;
         public int status;
         public String type = "", message = "", path = "", method = "", user = "";
+    }
+
+    public static class ForwardResult {
+        public int totalRequested, successCount, failedCount;
+        public java.util.List<String> failedDetails = new java.util.ArrayList<String>();
     }
 
     public static class ApiException extends Exception {

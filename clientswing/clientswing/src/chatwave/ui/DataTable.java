@@ -33,7 +33,7 @@ public class DataTable extends JTable {
         setOpaque(false);
         setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         setFocusable(false);
-        setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+        setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         JTableHeader h = getTableHeader();
         h.setReorderingAllowed(false);
         h.setPreferredSize(new Dimension(100, 38));
@@ -56,6 +56,7 @@ public class DataTable extends JTable {
         for (int i = 0; i < widths.length && i < getColumnCount(); i++) {
             TableColumn tc = getColumnModel().getColumn(i);
             tc.setPreferredWidth(widths[i]);
+            tc.setMinWidth(Math.min(widths[i], 70));
         }
         setDefaultRenderer(Object.class, new TableCellRenderer() {
             public Component getTableCellRendererComponent(JTable t, final Object v, final boolean sel, boolean f, final int row, final int col) {
